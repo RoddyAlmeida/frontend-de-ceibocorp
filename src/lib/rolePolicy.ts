@@ -41,6 +41,10 @@ export const RolePolicy = {
     return role === 'admin' || role === 'super_admin';
   },
 
+  canActivateUsers(role: Role | null): boolean {
+    return role === 'super_admin';
+  },
+
   canAccessHistorialVentas(role: Role | null): boolean {
     return role === 'admin' || role === 'super_admin' || role === 'bodeguero';
   },
@@ -63,16 +67,13 @@ export const RolePolicy = {
 
   canToggleEmployee(
     actorRole: Role | null,
-    actorHeadquarterId: number | undefined,
+    _actorHeadquarterId: number | undefined,
     employee: EmployeeLike,
   ): boolean {
     if (actorRole === 'super_admin') return true;
     if (actorRole === 'admin') {
       const roleName = normalizeRoleName(employee.role ?? employee.role_name);
-      const empHq =
-        employee.headquarter_id ??
-        (typeof employee.headquarter === 'object' ? employee.headquarter?.id : undefined);
-      return roleName.includes('bodeguero') && empHq === actorHeadquarterId;
+      return roleName.includes('bodeguero');
     }
     return false;
   },

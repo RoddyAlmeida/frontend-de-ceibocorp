@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { login, getMe } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { getDefaultRouteForRole } from '../types/role';
@@ -132,6 +132,13 @@ export default function Login() {
               {loading ? 'Ingresando...' : 'Iniciar sesión'}
             </button>
           </form>
+
+          <p className="mt-6 text-center text-sm text-gray-500">
+            ¿No tienes cuenta?{' '}
+            <Link to="/register" className="font-semibold text-ceibo-green hover:underline">
+              Regístrate
+            </Link>
+          </p>
         </div>
       </div>
     </div>

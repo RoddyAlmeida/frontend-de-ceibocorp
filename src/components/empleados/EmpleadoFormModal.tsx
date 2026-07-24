@@ -133,7 +133,7 @@ export default function EmpleadoFormModal({
     <div className="fixed inset-0 z-[60] flex flex-col bg-white lg:items-center lg:justify-center lg:bg-black/40 lg:p-4">
       <form
         onSubmit={handleSubmit}
-        className="flex h-full min-h-0 flex-col lg:h-auto lg:max-h-[90vh] lg:w-full lg:max-w-lg lg:rounded-2xl lg:shadow-xl"
+        className="flex h-full min-h-0 flex-col bg-white lg:h-auto lg:max-h-[90vh] lg:w-full lg:max-w-lg lg:rounded-2xl lg:shadow-xl"
       >
         <div className="flex items-center justify-between border-b border-gray-100 px-4 py-4 lg:rounded-t-2xl">
           <h2 className="text-lg font-extrabold text-ceibo-green">
@@ -150,11 +150,6 @@ export default function EmpleadoFormModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          <div className="mb-4 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            El backend requiere cédula y dirección (como en Flutter). No hay endpoint de avatar ni
-            campo teléfono en <code className="text-[10px]">/users</code>.
-          </div>
-
           <div className="space-y-3">
             <Field label="Nombre" error={errors.name}>
               <input

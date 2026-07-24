@@ -7,6 +7,7 @@ import {
   getMe,
   loadTokenFromStorage,
   logout as apiLogout,
+  resolveUserHeadquarter,
 } from '../services/api';
 
 interface AuthState {
@@ -66,6 +67,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ token, isAuthenticated: true });
     try {
       const user = await getMe();
+      if (!user.headquarter_id && (user.role === 'admin' || user.role === 'bodeguero')) {
+        const hqId = await resolveUserHeadquarter(user);
+        if (hqId) {
+          user.headquarter_id = hqId;
+        }
+      }
       set({ ...applyUser(user), isHydrating: false });
     } catch (err) {
       console.error('[auth] Error al hidratar sesión:', err);

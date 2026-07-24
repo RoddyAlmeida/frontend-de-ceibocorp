@@ -89,6 +89,31 @@ export async function getMe(): Promise<User> {
   return parseUser(data);
 }
 
+export async function resolveUserHeadquarter(user: User): Promise<number | undefined> {
+  if (user.headquarter_id) return user.headquarter_id;
+  if (user.role === 'super_admin') return undefined;
+  try {
+    const { data } = await api.get('/users');
+    const list: Record<string, unknown>[] = Array.isArray(data)
+      ? data
+      : Array.isArray((data as Record<string, unknown>).data)
+        ? ((data as Record<string, unknown>).data as Record<string, unknown>[])
+        : [];
+    const self = list.find((u) => (u as Record<string, unknown>).id === user.id);
+    if (!self) return undefined;
+    const raw = self as Record<string, unknown>;
+    const rawHq = raw.headquarter;
+    const hqId =
+      (raw.headquarter_id as number | undefined) ??
+      (typeof rawHq === 'object' && rawHq !== null
+        ? ((rawHq as Record<string, unknown>).id as number | undefined)
+        : undefined);
+    return hqId;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function logout() {
   try {
     await api.post('/logout');
@@ -174,10 +199,16 @@ export const getStockMovements = (params?: Record<string, string>) =>
 // ─── Headquarters ───────────────────────────────────────────────────────────
 
 export const getHeadquarters = () => api.get('/headquarters');
+export const getPublicHeadquarters = () =>
+  axios.get(`${baseURL}/public/headquarters`, {
+    headers: { Accept: 'application/json' },
+  });
 export const createHeadquarter = (body: Record<string, unknown>) =>
   api.post('/headquarters', body);
 export const updateHeadquarter = (id: number, body: Record<string, unknown>) =>
   api.put(`/headquarters/${id}`, body);
+export const deleteHeadquarter = (id: number) =>
+  api.delete(`/headquarters/${id}`);
 export const getStocksByHeadquarter = (
   hqId: number,
   params?: Record<string, string>,
@@ -190,7 +221,7 @@ export const getSalesByHeadquarter = (hqId: number) =>
 export const getUsers = () => api.get('/users');
 export const getRoles = () => api.get('/roles');
 export const toggleUserStatus = (userId: number, isActive: boolean) =>
-  api.put(`/users/${userId}`, { is_active: isActive });
+  api.put(`/users/${userId}`, { status: isActive ? 'active' : 'inactive' });
 export const updateUser = (userId: number, body: Record<string, unknown>) =>
   api.patch(`/users/${userId}`, body);
 export const updateUserStatus = (userId: number, status: 'active' | 'inactive') =>
@@ -232,16 +263,29 @@ export async function updateEmployee(userId: number, payload: UpdateEmployeePayl
 }
 
 export async function toggleEmployeeStatus(userId: number, active: boolean) {
-  try {
-    const { data } = await api.patch(`/users/${userId}`, {
-      status: active ? 'active' : 'inactive',
-    });
-    return data;
-  } catch (err) {
-    console.warn('[api] PATCH status falló, intentando PUT is_active:', err);
-    const { data } = await api.put(`/users/${userId}`, { is_active: active });
-    return data;
-  }
+  const { data } = await api.put(`/users/${userId}`, {
+    status: active ? 'active' : 'inactive',
+  });
+  return data;
+}
+
+export async function activateUserWithRole(userId: number, _roleId: number) {
+  // TODO(backend): No existe endpoint para activar + asignar rol en un solo paso.
+  const { data } = await api.put(`/users/${userId}`, { status: 'active' });
+  return data;
+}
+
+/**
+ * Asigna un rol a un usuario ya existente.
+ * NOTA: Esto requiere un segundo PATCH /users/{id} porque el endpoint
+ * toggle-active no acepta role_id. Se llama después de activateUserWithRole
+ * solo si el backend lo soporta.
+ *
+ * TODO(backend): Consolidar activación + asignación de rol en un solo endpoint.
+ */
+export async function updateUserRole(userId: number, roleId: number) {
+  const { data } = await api.patch(`/users/${userId}`, { role_id: roleId });
+  return data;
 }
 
 // ─── Stock Alerts / Thresholds / Movements ──────────────────────────────────

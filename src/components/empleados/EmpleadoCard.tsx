@@ -22,6 +22,8 @@ interface EmpleadoCardProps {
   canToggle: boolean;
   onEdit: () => void;
   onToggle: () => void;
+  onActivate?: () => void;
+  showActivate?: boolean;
 }
 
 export default function EmpleadoCard({
@@ -29,6 +31,8 @@ export default function EmpleadoCard({
   canToggle,
   onEdit,
   onToggle,
+  onActivate,
+  showActivate,
 }: EmpleadoCardProps) {
   const name = empleadoDisplayName(empleado);
 
@@ -58,12 +62,18 @@ export default function EmpleadoCard({
 
       <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
         <div className="flex items-center gap-2">
-          <span
-            className={`text-[10px] font-extrabold tracking-wide ${empleado.isActive ? 'text-ceibo-green-light' : 'text-gray-400'}`}
-          >
-            {empleado.isActive ? 'ACTIVO' : 'INACTIVO'}
-          </span>
-          {canToggle && (
+          {showActivate && !empleado.isActive ? (
+            <span className="text-[10px] font-extrabold tracking-wide text-amber-600">
+              PENDIENTE
+            </span>
+          ) : (
+            <span
+              className={`text-[10px] font-extrabold tracking-wide ${empleado.isActive ? 'text-ceibo-green-light' : 'text-gray-400'}`}
+            >
+              {empleado.isActive ? 'ACTIVO' : 'INACTIVO'}
+            </span>
+          )}
+          {canToggle && !showActivate && (
             <button
               type="button"
               role="switch"
@@ -83,13 +93,24 @@ export default function EmpleadoCard({
             </button>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onEdit}
-          className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200"
-        >
-          Editar
-        </button>
+        <div className="flex items-center gap-2">
+          {showActivate && onActivate && !empleado.isActive && (
+            <button
+              type="button"
+              onClick={onActivate}
+              className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600"
+            >
+              Activar
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200"
+          >
+            Editar
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -100,6 +121,8 @@ interface EmpleadoTableProps {
   canToggleFor: (emp: Empleado) => boolean;
   onEdit: (emp: Empleado) => void;
   onToggle: (emp: Empleado) => void;
+  onActivate?: (emp: Empleado) => void;
+  showActivate?: boolean;
 }
 
 export function EmpleadoTable({
@@ -107,6 +130,8 @@ export function EmpleadoTable({
   canToggleFor,
   onEdit,
   onToggle,
+  onActivate,
+  showActivate,
 }: EmpleadoTableProps) {
   return (
     <div className="hidden overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:block">
@@ -147,15 +172,28 @@ export function EmpleadoTable({
               </td>
               <td className="px-4 py-3 text-gray-600">{emp.headquarterName}</td>
               <td className="px-4 py-3">
-                <span
-                  className={`text-xs font-bold ${emp.isActive ? 'text-ceibo-green-light' : 'text-gray-400'}`}
-                >
-                  {emp.isActive ? 'Activo' : 'Inactivo'}
-                </span>
+                {showActivate && !emp.isActive ? (
+                  <span className="text-xs font-bold text-amber-600">Pendiente</span>
+                ) : (
+                  <span
+                    className={`text-xs font-bold ${emp.isActive ? 'text-ceibo-green-light' : 'text-gray-400'}`}
+                  >
+                    {emp.isActive ? 'Activo' : 'Inactivo'}
+                  </span>
+                )}
               </td>
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2">
-                  {canToggleFor(emp) && (
+                  {showActivate && onActivate && !emp.isActive && (
+                    <button
+                      type="button"
+                      onClick={() => onActivate(emp)}
+                      className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600"
+                    >
+                      Activar
+                    </button>
+                  )}
+                  {canToggleFor(emp) && !showActivate && (
                     <button
                       type="button"
                       onClick={() => onToggle(emp)}

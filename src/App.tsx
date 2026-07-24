@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import AlertasStock from './pages/AlertasStock';
 import Empleados from './pages/Empleados';
 import HistorialVentas from './pages/HistorialVentas';
@@ -28,6 +29,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
       <Route element={<ProtectedRoute allowedRoles={['bodeguero', 'admin', 'super_admin']} />}>
         <Route element={<Layout />}>

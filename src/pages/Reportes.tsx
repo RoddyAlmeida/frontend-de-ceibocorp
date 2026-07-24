@@ -9,6 +9,7 @@ import {
   getHeadquarters,
   getUsers,
   createHeadquarter,
+  deleteHeadquarter,
 } from '../services/api';
 
 interface DashboardData {
@@ -43,6 +44,8 @@ export default function Reportes() {
   const [showSedeDialog, setShowSedeDialog] = useState(false);
   const [sedeForm, setSedeForm] = useState({ name: '', address: '', phone: '' });
   const [saving, setSaving] = useState(false);
+  const [deletingSede, setDeletingSede] = useState<{ id: number; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -122,15 +125,35 @@ export default function Reportes() {
     setSaving(true);
     try {
       await createHeadquarter({ name: sedeForm.name.trim(), address: sedeForm.address.trim(), phone: sedeForm.phone.trim() });
-      const res = await getHeadquarters();
-      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
-      setSedes(list.map((h: Record<string, unknown>) => ({ id: Number(h.id ?? 0), name: String(h.name ?? ''), address: String(h.address ?? '') })));
+      await reloadSedes();
       setShowSedeDialog(false);
       setSedeForm({ name: '', address: '', phone: '' });
     } catch (err) {
       console.error('[reportes] Error al crear sede:', err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const reloadSedes = async () => {
+    try {
+      const res = await getHeadquarters();
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+      setSedes(list.map((h: Record<string, unknown>) => ({ id: Number(h.id ?? 0), name: String(h.name ?? ''), address: String(h.address ?? '') })));
+    } catch { /* silent */ }
+  };
+
+  const handleDeleteSede = async () => {
+    if (!deletingSede) return;
+    setDeleting(true);
+    try {
+      await deleteHeadquarter(deletingSede.id);
+      setDeletingSede(null);
+      await reloadSedes();
+    } catch (err) {
+      console.error('[reportes] Error al eliminar sede:', err);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -205,7 +228,15 @@ export default function Reportes() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {sedes.map((s) => (
-                      <div key={s.id} className="rounded-xl border border-gray-200 bg-white p-3 text-center shadow-sm">
+                      <div key={s.id} className="relative rounded-xl border border-gray-200 bg-white p-3 text-center shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => setDeletingSede({ id: s.id, name: s.name })}
+                          className="absolute right-1.5 top-1.5 rounded-full p-1 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                          aria-label={`Eliminar ${s.name}`}
+                        >
+                          ✕
+                        </button>
                         <span className="mb-1 text-2xl">📍</span>
                         <p className="text-xs font-bold text-gray-800">{s.name}</p>
                         {s.address && <p className="text-[11px] text-gray-500">{s.address}</p>}
@@ -257,6 +288,37 @@ export default function Reportes() {
             <div className="flex gap-2">
               <button type="button" onClick={() => setShowSedeDialog(false)} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-50">Cancelar</button>
               <button type="button" onClick={handleCreateSede} disabled={!sedeForm.name.trim() || saving} className="flex-1 rounded-xl bg-green-700 py-2.5 text-xs font-bold text-white disabled:opacity-50">{saving ? 'Creando...' : 'Crear'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Sede Confirmation */}
+      {deletingSede && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
+            <h3 className="text-sm font-extrabold text-red-700">Eliminar sede</h3>
+            <p className="mt-2 text-xs text-gray-500">
+              ¿Eliminar <span className="font-semibold text-gray-700">{deletingSede.name}</span>?
+              Esta acción es irreversible. Si la sede tiene usuarios, stock o ventas asociados, el backend puede rechazar la eliminación.
+            </p>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDeletingSede(null)}
+                disabled={deleting}
+                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteSede}
+                disabled={deleting}
+                className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
             </div>
           </div>
         </div>

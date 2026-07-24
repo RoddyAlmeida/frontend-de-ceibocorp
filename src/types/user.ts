@@ -24,7 +24,14 @@ export function parseUser(json: Record<string, unknown>): User {
     address: json.address as string | undefined,
     email: json.email as string,
     role: parseRole(rawRole),
-    headquarter_id: json.headquarter_id as number | undefined,
+    headquarter_id:
+      (json.headquarter_id as number | undefined) ??
+      (() => {
+        const hq = json.headquarter;
+        return typeof hq === 'object' && hq !== null
+          ? ((hq as Record<string, unknown>).id as number | undefined)
+          : undefined;
+      })(),
     status: json.status as string | undefined,
   };
 }

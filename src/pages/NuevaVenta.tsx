@@ -122,10 +122,12 @@ function calcTotal(venta: SaleData): number {
 
 interface ReciboProps {
   venta: SaleData;
+  sellerName?: string;
+  sedeName?: string;
   innerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-function Recibo({ venta, innerRef }: ReciboProps) {
+function Recibo({ venta, sellerName, sedeName, innerRef }: ReciboProps) {
   const details = venta.sale_details ?? venta.details ?? [];
   const total = calcTotal(venta);
 
@@ -135,28 +137,35 @@ function Recibo({ venta, innerRef }: ReciboProps) {
       className="w-full rounded-xl bg-white p-4 font-mono text-xs text-gray-800 shadow-md"
     >
       <h2 className="text-center text-lg font-black text-ceibo-green">{EMPRESA.nombre}</h2>
+      {sedeName && (
+        <p className="text-center text-[11px] text-gray-600">{sedeName}</p>
+      )}
       <p className="text-center text-[11px] text-gray-600">RUC: {EMPRESA.ruc}</p>
-      <p className="mt-1 text-center text-[10px] leading-tight text-gray-500">
-        {EMPRESA.direccion}
+
+      <p className="mt-2 text-center text-[10px] italic leading-tight text-gray-400">
+        Documento sin validez tributaria, no reemplaza factura electrónica.
       </p>
 
       <hr className="my-3 border-dashed border-gray-300" />
 
-      <p className="text-center text-sm font-bold text-ceibo-green">
-        Nota de Venta #{venta.id ?? '—'}
-      </p>
-      <p className="text-center text-[10px] text-gray-500">{formatFecha(venta.created_at)}</p>
-
-      <hr className="my-3 border-dashed border-gray-300" />
-
-      <div className="space-y-1 text-[11px]">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+        <p>
+          <span className="text-gray-500">N.° de nota: </span>
+          <span className="font-semibold">{venta.id ?? '—'}</span>
+        </p>
+        <p>
+          <span className="text-gray-500">Fecha: </span>
+          <span className="font-semibold">{formatFecha(venta.created_at)}</span>
+        </p>
+        {sellerName && (
+          <p>
+            <span className="text-gray-500">Vendedor: </span>
+            <span className="font-semibold">{sellerName}</span>
+          </p>
+        )}
         <p>
           <span className="text-gray-500">Cliente: </span>
           <span className="font-semibold">{venta.customer_name ?? 'Consumidor Final'}</span>
-        </p>
-        <p>
-          <span className="text-gray-500">Cédula: </span>
-          <span className="font-semibold">{venta.customer_id_card ?? '—'}</span>
         </p>
       </div>
 
@@ -165,9 +174,9 @@ function Recibo({ venta, innerRef }: ReciboProps) {
       <table className="mt-1 w-full border-collapse text-[11px] leading-[1.6]">
         <thead>
           <tr className="text-[10px] font-bold text-gray-500">
-            <th className="w-8 pb-1 text-center">Cant</th>
             <th className="pb-1 text-left">Producto</th>
-            <th className="w-16 pb-1 text-right">P.Unit</th>
+            <th className="w-10 pb-1 text-right">Cant.</th>
+            <th className="w-16 pb-1 text-right">P.unit.</th>
             <th className="w-16 pb-1 text-right">Subt.</th>
           </tr>
         </thead>
@@ -177,8 +186,8 @@ function Recibo({ venta, innerRef }: ReciboProps) {
             const price = parseNum(d.price);
             return (
               <tr key={i}>
-                <td className="py-1.5 text-center">{qty}</td>
                 <td className="max-w-0 truncate py-1.5 font-semibold">{productNameFromDetail(d)}</td>
+                <td className="py-1.5 text-right">{qty}</td>
                 <td className="py-1.5 text-right">${price.toFixed(2)}</td>
                 <td className="py-1.5 text-right font-bold">${(price * qty).toFixed(2)}</td>
               </tr>
@@ -189,17 +198,15 @@ function Recibo({ venta, innerRef }: ReciboProps) {
 
       <hr className="my-3 border-dashed border-gray-300" />
 
-      <div className="flex w-full items-center justify-between">
-        <span className="text-sm font-black text-ceibo-green">TOTAL</span>
+      <div className="flex w-full justify-end">
         <span className="text-lg font-black text-ceibo-green">${total.toFixed(2)}</span>
       </div>
 
       <hr className="my-3 border-dashed border-gray-300" />
 
-      <p className="text-center text-[9px] font-semibold uppercase tracking-wide text-red-500">
-        Recibo no válido para SRI
+      <p className="text-center text-[9px] text-gray-400">
+        Comprobante interno de venta — sin validez ante el SRI
       </p>
-      <p className="mt-2 text-center text-[10px] text-gray-400">Gracias por su compra</p>
     </div>
   );
 }
@@ -505,14 +512,19 @@ export default function NuevaVenta() {
         </header>
 
         <main className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-          <Recibo venta={ventaCompletada} innerRef={reciboRef} />
+          <Recibo
+            venta={ventaCompletada}
+            sellerName={user ? `${user.name} ${user.last_name ?? ''}`.trim() : undefined}
+            sedeName={headquarters.find((h) => h.id === (selectedHqId ?? user?.headquarter_id))?.name}
+            innerRef={reciboRef}
+          />
 
           <button
             type="button"
             onClick={() => descargarRecibo(ventaCompletada)}
             className="w-full rounded-xl bg-ceibo-sale p-4 text-sm font-bold text-white"
           >
-            Volver a descargar recibo
+            Descargar recibo
           </button>
 
           <button
