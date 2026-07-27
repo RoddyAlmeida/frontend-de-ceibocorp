@@ -232,6 +232,7 @@ export default function NuevaVenta() {
   const [cedula, setCedula] = useState('');
   const [telefono, setTelefono] = useState('');
   const [direccion, setDireccion] = useState('');
+  const [email, setEmail] = useState('');
 
   const [selectedHqId, setSelectedHqId] = useState<number | null>(null);
   const [headquarters, setHeadquarters] = useState<{ id: number; name: string }[]>([]);
@@ -450,6 +451,7 @@ export default function NuevaVenta() {
       sale_type: saleType,
       customer_name: customerName,
       customer_id_card: customerIdCard,
+      ...(email.trim() && { customer_email: email.trim() }),
       ...(isWholesale && {
         customer_phone: telefono.trim(),
         customer_address: direccion.trim(),
@@ -597,6 +599,7 @@ export default function NuevaVenta() {
               placeholder="Consumidor Final por defecto"
             />
           )}
+          <Field label="Email (opcional)" value={email} onChange={setEmail} placeholder="cliente@correo.com" type="email" />
         </section>
 
         {/* Sede — super_admin only */}

@@ -352,6 +352,7 @@ export interface CreateSalePayload {
   sale_type: 'retail' | 'wholesale';
   customer_name: string;
   customer_id_card: string;
+  customer_email?: string;
   customer_phone?: string;
   customer_address?: string;
   description: string;
