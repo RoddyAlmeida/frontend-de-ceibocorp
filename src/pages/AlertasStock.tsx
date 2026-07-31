@@ -41,7 +41,9 @@ interface Category { id: number; name: string }
 interface Headquarter { id: number; name: string }
 
 export default function AlertasStock() {
+  const user = useAuthStore((s) => s.user);
   const role = useAuthStore((s) => s.role);
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const canManage = RolePolicy.canManageThresholds(role);
   const canDelete = RolePolicy.canDeleteThreshold(role);
 
@@ -72,17 +74,21 @@ export default function AlertasStock() {
     setLoading(true);
     setError(null);
     try {
+      const baseParams: Record<string, string> = {};
+      if (!isSuperAdmin && user?.headquarter_id) {
+        baseParams.headquarter_id = String(user.headquarter_id);
+      }
       let list: StockAlert[];
       if (filter === 'all') {
         const [activeRes, resolvedRes] = await Promise.all([
-          getStockAlerts({ status: 'active' }),
-          getStockAlerts({ status: 'resolved' }),
+          getStockAlerts({ ...baseParams, status: 'active' }),
+          getStockAlerts({ ...baseParams, status: 'resolved' }),
         ]);
         const active = Array.isArray(activeRes.data) ? activeRes.data : (activeRes.data?.data ?? []);
         const resolved = Array.isArray(resolvedRes.data) ? resolvedRes.data : (resolvedRes.data?.data ?? []);
         list = [...active, ...resolved];
       } else {
-        const res = await getStockAlerts({ status: filter });
+        const res = await getStockAlerts({ ...baseParams, status: filter });
         list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
       }
       setAlerts(list);
@@ -92,13 +98,17 @@ export default function AlertasStock() {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, user?.headquarter_id, isSuperAdmin]);
 
   const loadThresholds = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getAlertThresholds();
+      const params: Record<string, string> = {};
+      if (!isSuperAdmin && user?.headquarter_id) {
+        params.headquarter_id = String(user.headquarter_id);
+      }
+      const res = await getAlertThresholds(params);
       const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
       setThresholds(list);
     } catch (err) {
@@ -107,7 +117,7 @@ export default function AlertasStock() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.headquarter_id, isSuperAdmin]);
 
   useEffect(() => {
     if (tab === 'alerts') loadAlerts();

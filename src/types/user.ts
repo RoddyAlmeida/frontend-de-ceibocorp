@@ -11,11 +11,17 @@ export interface User {
   email: string;
   role: Role;
   headquarter_id?: number;
+  headquarter?: { id: number; name: string };
   status?: string;
 }
 
 export function parseUser(json: Record<string, unknown>): User {
   const rawRole = json.role;
+  const rawHq = json.headquarter;
+  const headquarter =
+    typeof rawHq === 'object' && rawHq !== null
+      ? { id: (rawHq as Record<string, unknown>).id as number, name: (rawHq as Record<string, unknown>).name as string }
+      : undefined;
   return {
     id: json.id as number,
     name: json.name as string,
@@ -26,12 +32,8 @@ export function parseUser(json: Record<string, unknown>): User {
     role: parseRole(rawRole),
     headquarter_id:
       (json.headquarter_id as number | undefined) ??
-      (() => {
-        const hq = json.headquarter;
-        return typeof hq === 'object' && hq !== null
-          ? ((hq as Record<string, unknown>).id as number | undefined)
-          : undefined;
-      })(),
+      headquarter?.id,
+    headquarter,
     status: json.status as string | undefined,
   };
 }

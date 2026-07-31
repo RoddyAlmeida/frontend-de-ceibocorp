@@ -22,7 +22,7 @@ interface TrasladosState {
 
   setActiveTab: (tab: TransferStatus | null) => void;
   setSearch: (q: string) => void;
-  fetchTransfers: () => Promise<void>;
+  fetchTransfers: (headquarterId?: number) => Promise<void>;
   fetchTransferDetail: (id: number) => Promise<void>;
   selectTransfer: (t: Transfer | null) => void;
   createNewTransfer: (payload: CreateTransferPayload) => Promise<void>;
@@ -32,6 +32,7 @@ interface TrasladosState {
     images?: File[],
   ) => Promise<void>;
   clearToast: () => void;
+  reset: () => void;
 }
 
 function extractList(data: unknown): Record<string, unknown>[] {
@@ -57,10 +58,12 @@ export const useTrasladosStore = create<TrasladosState>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   setSearch: (q) => set({ search: q }),
 
-  fetchTransfers: async () => {
+  fetchTransfers: async (headquarterId?: number) => {
     set({ loading: true, error: null });
     try {
-      const { data } = await getTransfers();
+      const params: Record<string, string> = {};
+      if (headquarterId) params.headquarter_id = String(headquarterId);
+      const { data } = await getTransfers(params);
       const list = extractList(data).map(parseTransfer);
       set({ transfers: list, loading: false });
     } catch (err) {
@@ -134,4 +137,15 @@ export const useTrasladosStore = create<TrasladosState>((set, get) => ({
   },
 
   clearToast: () => set({ toast: null }),
+  reset: () =>
+    set({
+      transfers: [],
+      selectedTransfer: null,
+      activeTab: null,
+      search: '',
+      loading: false,
+      detailLoading: false,
+      error: null,
+      toast: null,
+    }),
 }));

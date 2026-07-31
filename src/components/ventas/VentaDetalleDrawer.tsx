@@ -4,12 +4,8 @@ import { RolePolicy } from '../../lib/rolePolicy';
 import { deleteSale } from '../../services/api';
 import type { Role } from '../../types/role';
 import type { Venta } from '../../types/venta';
-import {
-  formatFechaVenta,
-  nombreProductoVenta,
-  ventaIsAnulada,
-  ventaTotal,
-} from '../../types/venta';
+import { formatFechaVenta, nombreProductoVenta, ventaIsAnulada, ventaTotal } from '../../types/venta';
+import { buildReceiptHtmlString } from '../Recibo';
 
 interface VentaDetalleDrawerProps {
   venta: Venta | null;
@@ -37,7 +33,8 @@ export default function VentaDetalleDrawer({
   const canVoid = RolePolicy.canVoidSale(role) && !anulada;
 
   const handlePrint = () => {
-    const html = buildReceiptHtml(venta, total);
+    const sellerName = venta.user ? `${venta.user.name ?? ''} ${venta.user.last_name ?? ''}`.trim() : '';
+    const html = buildReceiptHtmlString(venta, sellerName, venta.headquarter?.name, role === 'super_admin');
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.left = '-9999px';
@@ -58,7 +55,11 @@ export default function VentaDetalleDrawer({
   };
 
   const handleDownloadImage = async () => {
-    const receipt = buildReceiptElement(venta, total);
+    const sellerName = venta.user ? `${venta.user.name ?? ''} ${venta.user.last_name ?? ''}`.trim() : '';
+    const html = buildReceiptHtmlString(venta, sellerName, venta.headquarter?.name, role === 'super_admin');
+    const receipt = document.createElement('div');
+    receipt.style.cssText = 'position:fixed;left:-9999px;top:0;width:300px;background:#fff;font-family:monospace';
+    receipt.innerHTML = html;
     document.body.appendChild(receipt);
     await new Promise((r) => requestAnimationFrame(r));
     await new Promise((r) => setTimeout(r, 100));
@@ -247,111 +248,4 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
-function buildReceiptHtml(venta: Venta, total: number): string {
-  const rows = venta.sale_details
-    .map(
-      (d) =>
-        `<tr><td>${escapeHtml(nombreProductoVenta(d))}</td><td style="text-align:right">${d.quantity}</td><td style="text-align:right">$${d.price.toFixed(2)}</td><td style="text-align:right;font-weight:700">$${(d.quantity * d.price).toFixed(2)}</td></tr>`,
-    )
-    .join('');
-
-  const seller = venta.user?.name ?? '';
-  const sede = venta.headquarter?.name ?? '';
-
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-  body{font-family:Courier New,monospace;font-size:11px;padding:8px;color:#1f2937;line-height:1.5}
-  table{width:100%;border-collapse:collapse} th,td{padding:4px 2px}
-  th{border-bottom:1px dashed #d1d5db;font-size:10px;font-weight:700;color:#6b7280}
-  hr{border:none;border-top:1px dashed #d1d5db;margin:12px 0}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:11px}
-  .row{display:flex;justify-content:space-between;padding:2px 0}
-  .row span:first-child{color:#6b7280} .row span:last-child{font-weight:600}
-  </style></head><body>
-  <div style="text-align:center">
-    <div style="font-size:18px;font-weight:900;color:#16a34a">CEIBO CORP</div>
-    ${sede ? `<div style="font-size:11px;color:#4b5563">${escapeHtml(sede)}</div>` : ''}
-    <div style="font-size:11px;color:#4b5563">RUC: 0999999999001</div>
-    <div style="font-size:10px;font-style:italic;color:#9ca3af;margin-top:8px">Documento sin validez tributaria, no reemplaza factura electrónica.</div>
-  </div>
-  <hr/>
-  <div class="grid">
-    <div class="row"><span>N.° de nota:</span><span>${venta.id}</span></div>
-    <div class="row"><span>Fecha:</span><span>${formatFechaVenta(venta.created_at)}</span></div>
-    ${seller ? `<div class="row"><span>Vendedor:</span><span>${escapeHtml(seller)}</span></div>` : ''}
-    <div class="row"><span>Cliente:</span><span>${escapeHtml(venta.customer_name)}</span></div>
-  </div>
-  <hr/>
-  <table><thead><tr><th style="text-align:left">Producto</th><th style="text-align:right">Cant.</th><th style="text-align:right">P.unit.</th><th style="text-align:right">Subt.</th></tr></thead>
-  <tbody>${rows}</tbody></table>
-  <hr/>
-  <div style="text-align:right"><span style="font-size:18px;font-weight:900;color:#16a34a">$${total.toFixed(2)}</span></div>
-  <hr/>
-  <div style="text-align:center;font-size:9px;color:#9ca3af">Comprobante interno de venta — sin validez ante el SRI</div>
-  </body></html>`;
-}
-
-const EMPRESA = { nombre: 'CEIBO CORP', ruc: '0999999999001' };
-
-function buildReceiptElement(venta: Venta, total: number): HTMLElement {
-  const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;left:-9999px;top:0;width:300px;background:#fff;padding:16px;font-family:Courier New,monospace;font-size:11px;color:#1f2937;line-height:1.5';
-
-  const row = (label: string, value: string) =>
-    `<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:#6b7280">${label}</span><span style="font-weight:600">${value}</span></div>`;
-
-  const detailRows = venta.sale_details
-    .map(
-      (d) =>
-        `<tr><td style="padding:6px 0;font-weight:600">${escapeHtml(nombreProductoVenta(d))}</td><td style="padding:6px 0;text-align:right">${d.quantity}</td><td style="padding:6px 0;text-align:right">$${d.price.toFixed(2)}</td><td style="padding:6px 0;text-align:right;font-weight:700">$${(d.quantity * d.price).toFixed(2)}</td></tr>`,
-    )
-    .join('');
-
-  const seller = venta.user?.name ?? '';
-  const sede = venta.headquarter?.name ?? '';
-
-  el.innerHTML = `
-    <div style="text-align:center">
-      <div style="font-size:18px;font-weight:900;color:#16a34a">${EMPRESA.nombre}</div>
-      ${sede ? `<div style="font-size:11px;color:#4b5563">${escapeHtml(sede)}</div>` : ''}
-      <div style="font-size:11px;color:#4b5563">RUC: ${EMPRESA.ruc}</div>
-      <div style="font-size:10px;font-style:italic;color:#9ca3af;margin-top:8px">Documento sin validez tributaria, no reemplaza factura electrónica.</div>
-    </div>
-    <hr style="margin:12px 0;border:none;border-top:1px dashed #d1d5db"/>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:11px">
-      ${row('N.° de nota:', String(venta.id))}
-      ${row('Fecha:', formatFechaVenta(venta.created_at))}
-      ${seller ? row('Vendedor:', escapeHtml(seller)) : ''}
-      ${row('Cliente:', escapeHtml(venta.customer_name))}
-    </div>
-    <hr style="margin:12px 0;border:none;border-top:1px dashed #d1d5db"/>
-    <table style="width:100%;border-collapse:collapse;font-size:11px">
-      <thead>
-        <tr style="font-size:10px;font-weight:700;color:#6b7280">
-          <th style="text-align:left;padding-bottom:4px">Producto</th>
-          <th style="text-align:right;padding-bottom:4px;width:40px">Cant.</th>
-          <th style="text-align:right;padding-bottom:4px;width:60px">P.unit.</th>
-          <th style="text-align:right;padding-bottom:4px;width:60px">Subt.</th>
-        </tr>
-      </thead>
-      <tbody>${detailRows}</tbody>
-    </table>
-    <hr style="margin:12px 0;border:none;border-top:1px dashed #d1d5db"/>
-    <div style="text-align:right">
-      <span style="font-size:18px;font-weight:900;color:#16a34a">$${total.toFixed(2)}</span>
-    </div>
-    <hr style="margin:12px 0;border:none;border-top:1px dashed #d1d5db"/>
-    <div style="text-align:center;font-size:9px;color:#9ca3af">
-      Comprobante interno de venta — sin validez ante el SRI
-    </div>
-  `;
-
-  return el;
-}

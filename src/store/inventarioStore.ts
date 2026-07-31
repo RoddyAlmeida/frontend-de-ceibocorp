@@ -88,6 +88,7 @@ interface InventarioState {
   fetchKardexByStock: (stockId: string) => Promise<StockMovement[]>;
   fetchStockAlerts: () => Promise<unknown[]>;
   clearToast: () => void;
+  reset: () => void;
 }
 
 function applyLocalFilters(
@@ -573,4 +574,24 @@ export const useInventarioStore = create<InventarioState>((set, get) => ({
   },
 
   clearToast: () => set({ toast: null }),
+
+  reset: () =>
+    set({
+      items: [],
+      sedes: [],
+      categorias: [],
+      filters: { ...DEFAULT_FILTERS },
+      paginaActual: 1,
+      totalPaginas: 1,
+      totalItems: 0,
+      loading: false,
+      loadingMore: false,
+      fetchingPage: null,
+      error: null,
+      toast: null,
+      selectedItemId: null,
+      estadosLocales: {},
+      recuperacionLocales: {},
+      initialized: false,
+    }),
 }));

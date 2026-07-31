@@ -42,6 +42,7 @@ function extractPage(data: unknown): { items: Record<string, unknown>[]; meta: P
 export default function HistorialVentas() {
   const role = useAuthStore((s) => s.role);
   const user = useAuthStore((s) => s.user);
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
 
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [page, setPage] = useState(1);
@@ -60,7 +61,6 @@ export default function HistorialVentas() {
   const [headquarters, setHeadquarters] = useState<{ id: number; name: string }[]>([]);
 
   const scopeToHq = RolePolicy.shouldScopeSalesToHeadquarter(role);
-  const isSuperAdmin = RolePolicy.canManageThresholds(role);
   const hqId = user?.headquarter_id;
 
   const showToast = useCallback((msg: string, type: 'ok' | 'err' = 'ok') => {

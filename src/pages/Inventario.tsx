@@ -68,6 +68,7 @@ export default function Inventario() {
       init({
         isSuperAdmin,
         headquarterId: user.headquarter_id,
+        headquarterName: user.headquarter?.name,
       }).catch((err) => {
         console.error('[inventario] Error en init desde página:', err);
       });

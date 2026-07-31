@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { registerUnauthorizedHandler } from './lib/sessionEvents';
 import { useAuthStore } from './store/authStore';
+import { useInventarioStore } from './store/inventarioStore';
 import App from './App';
 
 function AppBootstrap() {
@@ -12,6 +13,7 @@ function AppBootstrap() {
   useEffect(() => {
     registerUnauthorizedHandler(() => {
       clearSession();
+      useInventarioStore.getState().reset();
       if (!window.location.pathname.startsWith('/login')) {
         window.location.replace('/login');
       }

@@ -22,7 +22,7 @@ export interface Venta {
   created_at: string;
   deleted_at?: string | null;
   deleted_reason?: string | null;
-  user?: { name?: string };
+  user?: { name?: string; last_name?: string };
   headquarter?: { name?: string };
   sale_details: SaleDetail[];
 }

@@ -16,6 +16,7 @@ import NewTransferDialog from '../components/traslados/NewTransferDialog';
 
 export default function Traslados() {
   const role = useAuthStore((s) => s.role);
+  const user = useAuthStore((s) => s.user);
   const {
     transfers,
     selectedTransfer,
@@ -46,8 +47,8 @@ export default function Traslados() {
   const canChangeStatus = RolePolicy.canChangeTransferStatus(role);
 
   useEffect(() => {
-    fetchTransfers();
-  }, [fetchTransfers]);
+    fetchTransfers(isSuperAdmin ? undefined : user?.headquarter_id);
+  }, [fetchTransfers, isSuperAdmin, user?.headquarter_id]);
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -231,7 +232,7 @@ export default function Traslados() {
       {/* New transfer dialog */}
       {showNewDialog && (
         <NewTransferDialog
-          currentHqId={useAuthStore.getState().user?.headquarterId}
+          currentHqId={useAuthStore.getState().user?.headquarter_id}
           onCrear={createNewTransfer}
           onClose={() => setShowNewDialog(false)}
         />

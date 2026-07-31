@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useAuthStore } from '../store/authStore';
 import {
   getStockMovements,
   createStockMovement,
@@ -16,6 +17,8 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> 
 };
 
 export default function Kardex() {
+  const user = useAuthStore((s) => s.user);
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
@@ -44,6 +47,9 @@ export default function Kardex() {
       if (filter !== 'all') params.type = filter;
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
+      if (!isSuperAdmin && user?.headquarter_id) {
+        params.headquarter_id = String(user.headquarter_id);
+      }
       const res = await getStockMovements(params);
       const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
       setMovements(list);
@@ -52,7 +58,7 @@ export default function Kardex() {
     } finally {
       setLoading(false);
     }
-  }, [filter, dateFrom, dateTo]);
+  }, [filter, dateFrom, dateTo, isSuperAdmin, user?.headquarter_id]);
 
   useEffect(() => {
     loadMovements();
@@ -160,8 +166,8 @@ export default function Kardex() {
               const date = m.created_at ? new Date(m.created_at as string) : null;
               const dateStr = date ? date.toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
               const timeStr = date ? date.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }) : '';
-              const qtyBefore = (m as Record<string, unknown>).quantity_before as number | null;
-              const qtyAfter = (m as Record<string, unknown>).quantity_after as number | null;
+              const qtyBefore = m.quantity_before ?? null;
+              const qtyAfter = m.quantity_after ?? null;
               return (
                 <div key={m.id} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                   <div className="mb-1 flex items-center justify-between">

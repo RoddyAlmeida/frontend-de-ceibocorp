@@ -1,6 +1,8 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import type { Role } from '../types/role';
 import { useAuthStore } from '../store/authStore';
+import { useInventarioStore } from '../store/inventarioStore';
+import { useTrasladosStore } from '../store/trasladosStore';
 
 interface NavItem {
   to: string;
@@ -40,9 +42,11 @@ export default function Layout() {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login', { replace: true });
     } catch (err) {
       console.error('[layout] Error al cerrar sesión:', err);
+    } finally {
+      useInventarioStore.getState().reset();
+      useTrasladosStore.getState().reset();
       navigate('/login', { replace: true });
     }
   };

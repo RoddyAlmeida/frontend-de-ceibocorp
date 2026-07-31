@@ -503,7 +503,8 @@ export const getStockAlert = (id: number) => api.get(`/stock-alerts/${id}`);
 
 // ─── Alert Thresholds ───────────────────────────────────────────────────────
 
-export const getAlertThresholds = () => api.get('/alert-thresholds');
+export const getAlertThresholds = (params?: Record<string, string>) =>
+  api.get('/alert-thresholds', { params });
 export const getAlertThreshold = (id: number) => api.get(`/alert-thresholds/${id}`);
 export const createAlertThreshold = (body: Record<string, unknown>) =>
   api.post('/alert-thresholds', body);
