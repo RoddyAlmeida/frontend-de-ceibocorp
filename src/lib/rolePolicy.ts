@@ -60,7 +60,7 @@ export const RolePolicy = {
   assignableRoles(actorRole: Role | null): RoleOption[] {
     if (actorRole === 'super_admin') return ROLE_OPTIONS;
     if (actorRole === 'admin') {
-      return ROLE_OPTIONS.filter((r) => r.value !== 'super_admin');
+      return ROLE_OPTIONS.filter((r) => r.value === 'bodeguero');
     }
     return [];
   },
@@ -80,6 +80,15 @@ export const RolePolicy = {
 
   canEditEmployee(actorRole: Role | null): boolean {
     return actorRole === 'admin' || actorRole === 'super_admin';
+  },
+
+  canEditEmployeeRole(actorRole: Role | null, employee: EmployeeLike): boolean {
+    if (actorRole === 'super_admin') return true;
+    if (actorRole === 'admin') {
+      const roleName = normalizeRoleName(employee.role ?? employee.role_name);
+      return roleName.includes('bodeguero');
+    }
+    return false;
   },
 
   canVoidSale(role: Role | null): boolean {

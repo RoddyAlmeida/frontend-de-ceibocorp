@@ -8,7 +8,7 @@ import {
   type StockMovement,
 } from '../services/api';
 
-type FilterType = 'all' | 'entry' | 'exit' | 'in_stock';
+type FilterType = 'all' | 'entry' | 'exit';
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   entry: { label: 'Entrada', color: '#1B5E20', bg: '#E8F5E9' },
@@ -31,7 +31,7 @@ export default function Kardex() {
 
   // Create form
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ type: 'entry' as 'entry' | 'exit' | 'in_stock', stock_id: '', quantity: '1', reason: '' });
+  const [form, setForm] = useState({ type: 'entry' as 'entry' | 'exit', stock_id: '', quantity: '1', reason: '' });
   const [saving, setSaving] = useState(false);
 
   // Stock list for autocomplete
@@ -131,7 +131,6 @@ export default function Kardex() {
             { value: 'all' as const, label: 'Todos' },
             { value: 'entry' as const, label: 'Entradas' },
             { value: 'exit' as const, label: 'Salidas' },
-            { value: 'in_stock' as const, label: 'Ajustes' },
           ].map((f) => (
             <button key={f.value} type="button" onClick={() => setFilter(f.value)} className={`rounded-full min-h-12 px-3 py-1.5 text-[11px] font-bold transition-colors ${filter === f.value ? 'bg-teal-600 text-white' : 'border border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}`}>
               {f.label}
@@ -207,10 +206,9 @@ export default function Kardex() {
 
             {/* Type */}
             <label className="mb-1 block text-[11px] font-semibold text-gray-500">Tipo</label>
-            <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as 'entry' | 'exit' | 'in_stock' }))} className="mb-2 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-xs focus:outline-none">
+            <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as 'entry' | 'exit' }))} className="mb-2 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-xs focus:outline-none">
               <option value="entry">Entrada</option>
               <option value="exit">Salida</option>
-              <option value="in_stock">Ajuste</option>
             </select>
 
             {/* Product search */}

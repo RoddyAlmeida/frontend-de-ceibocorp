@@ -136,6 +136,17 @@ export default function Empleados() {
     [role, user?.headquarter_id],
   );
 
+  const canEditFor = useCallback(
+    (emp: Empleado) =>
+      RolePolicy.canEditEmployeeRole(role, {
+        role_id: emp.role_id,
+        role: emp.role,
+        role_name: emp.roleLabel,
+        headquarter_id: emp.headquarter_id,
+      }),
+    [role],
+  );
+
   const openCreate = () => {
     setFormMode('create');
     setEditing(null);
@@ -325,6 +336,7 @@ export default function Empleados() {
                   key={emp.id}
                   empleado={emp}
                   canToggle={canToggleFor(emp)}
+                  canEdit={canEditFor(emp)}
                   onEdit={() => openEdit(emp)}
                   onToggle={() => requestToggle(emp)}
                   showActivate={tab === 'pendientes'}
@@ -335,6 +347,7 @@ export default function Empleados() {
             <EmpleadoTable
               empleados={filtered}
               canToggleFor={canToggleFor}
+              canEditFor={canEditFor}
               onEdit={openEdit}
               onToggle={requestToggle}
               showActivate={tab === 'pendientes'}

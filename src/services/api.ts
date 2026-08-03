@@ -300,6 +300,7 @@ export interface StockAlert {
   stock: {
     id: number;
     quantity: number;
+    sellable_quantity?: number;
     plant_size: {
       id: number;
       size_name: string;

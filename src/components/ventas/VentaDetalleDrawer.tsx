@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import html2canvas from 'html2canvas';
+import { useRef, useState } from 'react';
 import { RolePolicy } from '../../lib/rolePolicy';
 import { deleteSale } from '../../services/api';
+import { downloadReceiptAsImage } from '../../lib/receiptImage';
 import type { Role } from '../../types/role';
 import type { Venta } from '../../types/venta';
 import { formatFechaVenta, nombreProductoVenta, ventaIsAnulada, ventaTotal } from '../../types/venta';
-import { buildReceiptHtmlString } from '../Recibo';
+import { buildReceiptHtmlString, Recibo } from '../Recibo';
 
 interface VentaDetalleDrawerProps {
   venta: Venta | null;
@@ -25,15 +25,16 @@ export default function VentaDetalleDrawer({
   const [voidOpen, setVoidOpen] = useState(false);
   const [voidReason, setVoidReason] = useState('');
   const [voiding, setVoiding] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   if (!venta) return null;
 
   const total = ventaTotal(venta);
   const anulada = ventaIsAnulada(venta);
   const canVoid = RolePolicy.canVoidSale(role) && !anulada;
+  const sellerName = venta.user ? `${venta.user.name ?? ''} ${venta.user.last_name ?? ''}`.trim() : '';
 
   const handlePrint = () => {
-    const sellerName = venta.user ? `${venta.user.name ?? ''} ${venta.user.last_name ?? ''}`.trim() : '';
     const html = buildReceiptHtmlString(venta, sellerName, venta.headquarter?.name, role === 'super_admin');
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
@@ -55,29 +56,13 @@ export default function VentaDetalleDrawer({
   };
 
   const handleDownloadImage = async () => {
-    const sellerName = venta.user ? `${venta.user.name ?? ''} ${venta.user.last_name ?? ''}`.trim() : '';
-    const html = buildReceiptHtmlString(venta, sellerName, venta.headquarter?.name, role === 'super_admin');
-    const receipt = document.createElement('div');
-    receipt.style.cssText = 'position:fixed;left:-9999px;top:0;width:300px;background:#fff;font-family:monospace';
-    receipt.innerHTML = html;
-    document.body.appendChild(receipt);
-    await new Promise((r) => requestAnimationFrame(r));
-    await new Promise((r) => setTimeout(r, 100));
+    const el = receiptRef.current;
+    if (!el) return;
     try {
-      const canvas = await html2canvas(receipt, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-      });
-      const link = document.createElement('a');
-      link.download = `recibo-ceibocorp-${venta.id}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      await downloadReceiptAsImage(el, `recibo-ceibocorp-${venta.id}.png`);
       onToast('Recibo descargado');
     } catch {
       onToast('No se pudo descargar el recibo', 'err');
-    } finally {
-      receipt.remove();
     }
   };
 
@@ -199,6 +184,18 @@ export default function VentaDetalleDrawer({
               </button>
             )}
           </div>
+        </div>
+      </div>
+
+      <div aria-hidden="true" className="pointer-events-none" style={{ position: 'fixed', left: '-9999px', top: 0, width: 320 }}>
+        <div style={{ padding: 16, background: '#ffffff' }}>
+          <Recibo
+            venta={venta}
+            sellerName={sellerName}
+            sedeName={venta.headquarter?.name}
+            showSede={role === 'super_admin'}
+            innerRef={receiptRef}
+          />
         </div>
       </div>
 

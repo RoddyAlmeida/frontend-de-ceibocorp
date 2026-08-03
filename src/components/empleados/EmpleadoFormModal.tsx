@@ -54,6 +54,7 @@ export default function EmpleadoFormModal({
 }: EmpleadoFormModalProps) {
   const [form, setForm] = useState<EmpleadoFormData>(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const canChangeRole = actorRole === 'super_admin';
 
   useEffect(() => {
     if (!open) return;
@@ -243,7 +244,8 @@ export default function EmpleadoFormModal({
               <select
                 value={form.role_id ?? ''}
                 onChange={(e) => set({ role_id: e.target.value ? Number(e.target.value) : null })}
-                className={inputClass(errors.role_id)}
+                disabled={!canChangeRole}
+                className={`${inputClass(errors.role_id)} disabled:bg-gray-50 disabled:text-gray-500`}
               >
                 <option value="">Seleccionar rol</option>
                 {assignableRoles.map((r) => (

@@ -61,7 +61,7 @@ export function parseInventarioItem(raw: Record<string, unknown>): InventarioIte
 
   if (!nombre) nombre = String(raw.name ?? 'Sin nombre');
 
-  stock = parseInt(String(raw.quantity ?? raw.stock ?? 0), 10) || 0;
+  stock = parseInt(String(raw.sellable_quantity ?? raw.quantity ?? raw.stock ?? 0), 10) || 0;
 
   const hq = raw.headquarter;
   if (hq && typeof hq === 'object') {
@@ -76,7 +76,7 @@ export function parseInventarioItem(raw: Record<string, unknown>): InventarioIte
   }
 
   const stockMinimo = minQty ?? 10;
-  const enAlerta = minQty != null ? stock <= minQty : false;
+  const enAlerta = minQty != null ? stock < minQty : false;
 
   const rawStatus = String(raw.status ?? raw.estado ?? '');
   const estado: ItemEstadoValue = parseItemEstado(

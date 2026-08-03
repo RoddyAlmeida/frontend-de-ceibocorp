@@ -1,8 +1,10 @@
+import { useCallback, useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import type { Role } from '../types/role';
 import { useAuthStore } from '../store/authStore';
 import { useInventarioStore } from '../store/inventarioStore';
 import { useTrasladosStore } from '../store/trasladosStore';
+import { getStockAlerts } from '../services/api';
 
 interface NavItem {
   to: string;
@@ -24,7 +26,7 @@ const NAV_ITEMS: NavItem[] = [
 
 function bottomNavClassName(isActive: boolean) {
   return [
-    'flex flex-1 flex-col items-center justify-center gap-1 rounded-xl p-2 text-xs font-semibold transition-colors',
+    'flex flex-1 min-w-max flex-col items-center justify-center gap-1 rounded-xl p-2 text-xs font-semibold transition-colors',
     isActive ? 'text-ceibo-sale' : 'text-gray-500',
   ].join(' ');
 }
@@ -33,7 +35,30 @@ export default function Layout() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const role = useAuthStore((s) => s.role);
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const logout = useAuthStore((s) => s.logout);
+
+  const [alertCount, setAlertCount] = useState(0);
+
+  const loadAlertCount = useCallback(async () => {
+    try {
+      const params: Record<string, string> = { status: 'active' };
+      if (!isSuperAdmin && user?.headquarter_id) {
+        params.headquarter_id = String(user.headquarter_id);
+      }
+      const res = await getStockAlerts(params);
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+      setAlertCount(list.length);
+    } catch {
+      setAlertCount(0);
+    }
+  }, [isSuperAdmin, user?.headquarter_id]);
+
+  useEffect(() => {
+    loadAlertCount();
+    const t = window.setInterval(loadAlertCount, 60000);
+    return () => window.clearInterval(t);
+  }, [loadAlertCount]);
 
   const visibleItems = NAV_ITEMS.filter(
     (item) => role && item.roles.includes(role),
@@ -80,6 +105,11 @@ export default function Layout() {
             >
               <span>{item.icon}</span>
               <span>{item.label}</span>
+              {item.to === '/alertas-stock' && alertCount > 0 && (
+                <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                  {alertCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -119,11 +149,18 @@ export default function Layout() {
         </main>
 
         {/* Bottom nav — móvil/tablet */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-gray-200 bg-white px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 flex overflow-x-auto border-t border-gray-200 bg-white px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
           {visibleItems.map((item) => (
             <NavLink key={item.to} to={item.to} className={({ isActive }) => bottomNavClassName(isActive)}>
-              <span className="text-xl">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="relative text-xl">
+                {item.icon}
+                {item.to === '/alertas-stock' && alertCount > 0 && (
+                  <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                    {alertCount}
+                  </span>
+                )}
+              </span>
+              <span className="whitespace-nowrap">{item.label}</span>
             </NavLink>
           ))}
         </nav>

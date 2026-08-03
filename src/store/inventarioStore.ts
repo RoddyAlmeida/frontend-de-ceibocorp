@@ -373,9 +373,15 @@ export const useInventarioStore = create<InventarioState>((set, get) => ({
         quantity,
         reason,
       });
-      const nuevoStock =
-        (data.quantity_after as number | undefined) ??
-        (type === 'entry' ? item.stock + quantity : item.stock - quantity);
+      const qBefore = data.quantity_before as number | undefined;
+      const qAfter = data.quantity_after as number | undefined;
+      const delta =
+        qBefore != null && qAfter != null
+          ? qAfter - qBefore
+          : type === 'entry'
+            ? quantity
+            : -quantity;
+      const nuevoStock = Math.max(0, item.stock + delta);
 
       set({
         items: get().items.map((it) =>
@@ -406,8 +412,10 @@ export const useInventarioStore = create<InventarioState>((set, get) => ({
         quantity: cantidad,
         reason: 'Movimiento a recuperación',
       });
-      const nuevoStock =
-        (data.quantity_after as number | undefined) ?? item.stock - cantidad;
+      const qBefore = data.quantity_before as number | undefined;
+      const qAfter = data.quantity_after as number | undefined;
+      const delta = qBefore != null && qAfter != null ? qAfter - qBefore : -cantidad;
+      const nuevoStock = Math.max(0, item.stock + delta);
       const recuperacionLocales = {
         ...get().recuperacionLocales,
         [item.id]: (get().recuperacionLocales[item.id] ?? 0) + cantidad,
@@ -442,8 +450,10 @@ export const useInventarioStore = create<InventarioState>((set, get) => ({
         quantity: cantidad,
         reason: 'Repuesto desde recuperación',
       });
-      const nuevoStock =
-        (data.quantity_after as number | undefined) ?? item.stock + cantidad;
+      const qBefore = data.quantity_before as number | undefined;
+      const qAfter = data.quantity_after as number | undefined;
+      const delta = qBefore != null && qAfter != null ? qAfter - qBefore : cantidad;
+      const nuevoStock = Math.max(0, item.stock + delta);
       const recuperacionLocales = {
         ...get().recuperacionLocales,
         [item.id]: actuales - cantidad,

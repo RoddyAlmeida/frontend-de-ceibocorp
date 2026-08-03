@@ -20,6 +20,7 @@ function avatarGradient(label: string): string {
 interface EmpleadoCardProps {
   empleado: Empleado;
   canToggle: boolean;
+  canEdit?: boolean;
   onEdit: () => void;
   onToggle: () => void;
   onActivate?: () => void;
@@ -29,6 +30,7 @@ interface EmpleadoCardProps {
 export default function EmpleadoCard({
   empleado,
   canToggle,
+  canEdit = true,
   onEdit,
   onToggle,
   onActivate,
@@ -103,13 +105,15 @@ export default function EmpleadoCard({
               Activar
             </button>
           )}
-          <button
-            type="button"
-            onClick={onEdit}
-            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200"
-          >
-            Editar
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-200"
+            >
+              Editar
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -119,6 +123,7 @@ export default function EmpleadoCard({
 interface EmpleadoTableProps {
   empleados: Empleado[];
   canToggleFor: (emp: Empleado) => boolean;
+  canEditFor?: (emp: Empleado) => boolean;
   onEdit: (emp: Empleado) => void;
   onToggle: (emp: Empleado) => void;
   onActivate?: (emp: Empleado) => void;
@@ -128,6 +133,7 @@ interface EmpleadoTableProps {
 export function EmpleadoTable({
   empleados,
   canToggleFor,
+  canEditFor,
   onEdit,
   onToggle,
   onActivate,
@@ -202,13 +208,15 @@ export function EmpleadoTable({
                       {emp.isActive ? 'Desactivar' : 'Activar'}
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => onEdit(emp)}
-                    className="rounded-lg bg-ceibo-green-light/10 px-3 py-1.5 text-xs font-semibold text-ceibo-green-light hover:bg-ceibo-green-light/20"
-                  >
-                    Editar
-                  </button>
+                  {(canEditFor?.(emp) ?? true) && (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(emp)}
+                      className="rounded-lg bg-ceibo-green-light/10 px-3 py-1.5 text-xs font-semibold text-ceibo-green-light hover:bg-ceibo-green-light/20"
+                    >
+                      Editar
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

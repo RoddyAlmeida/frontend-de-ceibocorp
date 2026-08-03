@@ -358,7 +358,8 @@ function DialogModal({ type, items, loading, onNavigate, onClose }: { type: stri
       return items.slice(0, 20).map((a, i) => {
         const o = a as Record<string, unknown>;
         const name = String(((o.plant_size as Record<string, unknown>)?.plant as Record<string, unknown>)?.name ?? o.plant_name ?? 'Producto');
-        const qty = Number(o.quantity ?? 0);
+        const stockObj = o.stock as Record<string, unknown> | undefined;
+        const qty = Number(stockObj?.sellable_quantity ?? stockObj?.quantity ?? 0);
         const sev = qty === 0 ? 'Crítica' : qty <= Number(o.min_quantity ?? 0) / 2 ? 'Alta' : 'Media';
         const sevColor = qty === 0 ? 'text-red-700' : qty <= Number(o.min_quantity ?? 0) / 2 ? 'text-orange-700' : 'text-yellow-700';
         return (

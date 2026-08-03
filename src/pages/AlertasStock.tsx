@@ -120,9 +120,12 @@ export default function AlertasStock() {
   }, [user?.headquarter_id, isSuperAdmin]);
 
   useEffect(() => {
+    loadThresholds();
+  }, [loadThresholds]);
+
+  useEffect(() => {
     if (tab === 'alerts') loadAlerts();
-    else loadThresholds();
-  }, [tab, loadAlerts, loadThresholds]);
+  }, [tab, loadAlerts]);
 
   // Load reference data for form
   useEffect(() => {
@@ -264,7 +267,7 @@ export default function AlertasStock() {
             ) : (
               <div className="space-y-2">
                 {filteredAlerts.map((a) => {
-                  const qty = a.stock?.quantity ?? 0;
+                  const qty = a.stock?.sellable_quantity ?? a.stock?.quantity ?? 0;
                   const min = a.threshold?.min_quantity ?? 1;
                   const s = severity(qty, min);
                   const plantName = a.stock?.plant_size?.plant?.name ?? 'Producto';

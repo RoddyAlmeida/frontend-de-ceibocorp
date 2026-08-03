@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
 import { createSale, getHeadquarters, getPlantSizes, getStocksByHeadquarter } from '../services/api';
+import { downloadReceiptAsImage } from '../lib/receiptImage';
 import type { CreateSalePayload } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Recibo } from '../components/Recibo';
@@ -223,45 +223,12 @@ export default function NuevaVenta() {
   };
 
   const descargarRecibo = useCallback(async (venta: SaleData) => {
-    await document.fonts.ready;
-
     const el = reciboRef.current;
     if (!el) return;
-
-    // Clone the receipt and mount it directly to document.body, outside the
-    // entire Layout tree. This guarantees no ancestor with overflow-hidden,
-    // overflow-auto, transform, or clip-path can crop the capture.
-    const clone = el.cloneNode(true) as HTMLElement;
-    const container = document.createElement('div');
-    Object.assign(container.style, {
-      position: 'fixed',
-      left: '-9999px',
-      top: '0',
-      width: `${el.offsetWidth}px`,
-      height: 'auto',
-      overflow: 'visible',
-      background: '#ffffff',
-    });
-    container.appendChild(clone);
-    document.body.appendChild(container);
-
-    // Wait for fonts + one reflow so the clone renders at full size
-    await new Promise((r) => requestAnimationFrame(r));
-    await new Promise((r) => setTimeout(r, 100));
-
     try {
-      const canvas = await html2canvas(clone, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-      });
-
-      const link = document.createElement('a');
-      link.download = `recibo-ceibocorp-${venta.id ?? Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } finally {
-      container.remove();
+      await downloadReceiptAsImage(el, `recibo-ceibocorp-${venta.id ?? Date.now()}.png`);
+    } catch (err) {
+      console.error('[ventas] Error al descargar recibo:', err);
     }
   }, []);
 

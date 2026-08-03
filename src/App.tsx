@@ -52,7 +52,7 @@ export default function App() {
 
           <Route
             element={
-              <ProtectedRoute allowedRoles={['admin', 'super_admin']} />
+              <ProtectedRoute allowedRoles={['admin', 'super_admin', 'bodeguero']} />
             }
           >
             <Route path="/alertas-stock" element={<AlertasStock />} />
