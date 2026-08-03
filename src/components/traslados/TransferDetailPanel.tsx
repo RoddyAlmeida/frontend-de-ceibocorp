@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import type { Transfer } from '../../types/transfer';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Transfer, TransferImage } from '../../types/transfer';
 import {
   getTransferStatusMeta,
   getTransferDisplayGroup,
@@ -8,7 +8,7 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { RolePolicy } from '../../lib/rolePolicy';
 import { transferNextStates } from '../../types/transfer';
-import { uploadTransferImages } from '../../services/api';
+import { getTransferImages, uploadTransferImages } from '../../services/api';
 
 interface Props {
   transfer: Transfer;
@@ -42,6 +42,29 @@ export default function TransferDetailPanel({
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Evidence gallery — cargada desde GET /transfers/{id}/images (plural)
+  const [images, setImages] = useState<TransferImage[]>(transfer.transfer_images ?? []);
+  const [imagesLoading, setImagesLoading] = useState(true);
+  const [imagesError, setImagesError] = useState<string | null>(null);
+
+  const loadImages = useCallback(async () => {
+    setImagesLoading(true);
+    setImagesError(null);
+    try {
+      const res = await getTransferImages(transfer.id);
+      const list = Array.isArray(res.data) ? res.data : [];
+      setImages(list);
+    } catch (err) {
+      setImagesError(err instanceof Error ? err.message : 'Error al cargar evidencias');
+    } finally {
+      setImagesLoading(false);
+    }
+  }, [transfer.id]);
+
+  useEffect(() => {
+    loadImages();
+  }, [loadImages]);
+
   const handleEvidenceAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
@@ -66,6 +89,7 @@ export default function TransferDetailPanel({
       setEvidenceImages([]);
       setEvidencePreviews([]);
       setEvidenceDesc('');
+      loadImages();
     } catch (err) {
       setUploadMsg(err instanceof Error ? err.message : 'Error al subir evidencia');
     } finally {
@@ -152,21 +176,29 @@ export default function TransferDetailPanel({
             </>
           )}
 
-          {/* Evidence gallery */}
-          {transfer.transfer_images && transfer.transfer_images.length > 0 && (
+          {/* Evidence gallery — GET /transfers/{id}/images */}
+          {imagesLoading ? (
+            <p className="mb-4 py-2 text-center text-[11px] text-gray-400">
+              Cargando evidencias…
+            </p>
+          ) : imagesError ? (
+            <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-[11px] text-red-600">
+              {imagesError}
+            </p>
+          ) : images.length > 0 ? (
             <>
-              <SectionTitle text={`Evidencia (${transfer.transfer_images.length})`} />
+              <SectionTitle text={`Evidencia (${images.length})`} />
               <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-                {transfer.transfer_images.map((img) => (
+                {images.map((img) => (
                   <a
                     key={img.id}
-                    href={img.image_url}
+                    href={img.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0"
                   >
                     <img
-                      src={img.image_url}
+                      src={img.url}
                       alt={img.description ?? `Evidencia ${img.id}`}
                       className="h-20 w-20 rounded-xl object-cover"
                     />
@@ -174,7 +206,7 @@ export default function TransferDetailPanel({
                 ))}
               </div>
             </>
-          )}
+          ) : null}
 
           {/* Upload evidence — gated by canUploadEvidence */}
           {canUploadEvidence && (

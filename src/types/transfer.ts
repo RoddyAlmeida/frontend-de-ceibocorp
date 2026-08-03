@@ -120,8 +120,10 @@ export interface TransferUser {
 export interface TransferImage {
   id: number;
   description: string;
-  image_url: string;
+  url: string;
+  image_url?: string;
   created_at: string;
+  user?: TransferUser | null;
 }
 
 export interface Transfer {
@@ -191,6 +193,21 @@ function parseDetail(raw: unknown): TransferDetail {
   };
 }
 
+function parseImage(raw: unknown): TransferImage | null {
+  if (raw == null || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  const url = str(o.url ?? o.image_url);
+  if (!url) return null;
+  return {
+    id: num(o.id),
+    description: str(o.description),
+    url,
+    image_url: str(o.image_url) || undefined,
+    created_at: str(o.created_at),
+    user: parseUser(o.user),
+  };
+}
+
 function parseStatus(raw: unknown): TransferStatus {
   const s = str(raw, 'pending').toLowerCase().trim();
   switch (s) {
@@ -218,6 +235,9 @@ export function parseTransfer(raw: Record<string, unknown>): Transfer {
     details: Array.isArray(raw.details)
       ? raw.details.map(parseDetail)
       : [],
+    transfer_images: Array.isArray(raw.images)
+      ? raw.images.map(parseImage).filter((x): x is TransferImage => x != null)
+      : undefined,
   };
 }
 
