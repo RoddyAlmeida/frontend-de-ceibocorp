@@ -185,7 +185,7 @@ export default function NewTransferDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-      <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         {/* Header */}
         <div className="flex items-center gap-3 rounded-t-2xl bg-gradient-to-br from-green-800 to-green-600 p-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">
@@ -204,7 +204,7 @@ export default function NewTransferDialog({
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {error && (
             <div className="mb-3 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600">
               {error}

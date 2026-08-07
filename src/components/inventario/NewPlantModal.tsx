@@ -108,7 +108,7 @@ export default function NewPlantModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center">
-      <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <header className="flex items-center gap-3 rounded-t-2xl bg-gradient-to-br from-ceibo-green to-ceibo-green-light p-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">
             <span className="text-lg">🌱</span>
@@ -123,7 +123,7 @@ export default function NewPlantModal({
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {error && (
             <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600">{error}</div>
           )}
