@@ -283,7 +283,6 @@ export default function NuevaVenta() {
       setTelefono('');
       setDireccion('');
       await cargarProductos();
-      await descargarRecibo(venta);
     } catch (err) {
       const e = err as Error & { errors?: Record<string, string[]> };
       console.error('[ventas] Error al registrar venta:', e);
@@ -317,7 +316,7 @@ export default function NuevaVenta() {
       <div className="flex min-h-dvh w-full flex-col overflow-x-hidden bg-ceibo-bg">
         <header className="bg-gradient-to-br from-ceibo-sale to-blue-700 px-4 py-4 text-white">
           <h1 className="text-lg font-extrabold">Venta Registrada</h1>
-          <p className="text-xs text-white/80">El recibo se descargó automáticamente</p>
+          <p className="text-xs text-white/80">El recibo se puede descargar o enviar por correo</p>
         </header>
 
         <main className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
