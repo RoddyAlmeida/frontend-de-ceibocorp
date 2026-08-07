@@ -143,13 +143,11 @@ export default function NewTransferDialog({
             className="mb-3 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-xs focus:border-green-400 focus:outline-none"
           >
             <option value="">Seleccionar origen</option>
-            {sedes
-              .filter((s) => !excludedDestinations.includes(s.id))
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
+            {sedes.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
           </select>
 
           {/* Sede Destino */}
