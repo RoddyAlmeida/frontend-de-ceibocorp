@@ -90,6 +90,7 @@ export default function NuevaVenta() {
   const cargarProductos = useCallback(async (hqId?: number | null) => {
     setLoading(true);
     setError(null);
+    setProducts([]);
     try {
       let data: unknown;
       const effectiveHq = hqId ?? user?.headquarter_id;
@@ -114,24 +115,12 @@ export default function NuevaVenta() {
     cargarProductos();
   }, [cargarProductos]);
 
-  // Reload products when super_admin changes sede
+  // Reload products when super_admin changes sede; cart clears so nothing from the previous sede can be sold
   useEffect(() => {
     if (!isSuperAdmin) return;
+    setCarrito({});
     cargarProductos(selectedHqId);
   }, [isSuperAdmin, selectedHqId, cargarProductos]);
-
-  // Clear cart when sede changes to prevent selling stock from the wrong sede
-  const prevHqRef = useRef<number | null>(null);
-  const carritoRef = useRef(carrito);
-  carritoRef.current = carrito;
-  useEffect(() => {
-    if (!isSuperAdmin) return;
-    const prevHq = prevHqRef.current;
-    prevHqRef.current = selectedHqId;
-    if (prevHq !== null && prevHq !== selectedHqId && Object.keys(carritoRef.current).length > 0) {
-      setCarrito({});
-    }
-  }, [isSuperAdmin, selectedHqId]);
 
   useEffect(() => {
     if (!isSuperAdmin) return;
@@ -169,10 +158,15 @@ export default function NuevaVenta() {
   const cartItems = Object.values(carrito);
   const total = cartItems.reduce((s, i) => s + i.precio * i.quantity, 0);
   const isWholesale = saleType === 'wholesale';
+  const effectiveHqId = selectedHqId ?? user?.headquarter_id ?? null;
+  const sedeActiva = headquarters.find((h) => h.id === effectiveHqId)?.name;
 
   const agregarAlCarrito = (ps: Record<string, unknown>) => {
     const id = (ps.plant_size_id ?? ps.id) as number;
     if (!id || carrito[id]) return;
+    const psHq = ps.headquarter_id != null ? Number(ps.headquarter_id) : null;
+    const activeHq = selectedHqId ?? user?.headquarter_id ?? null;
+    if (activeHq != null && psHq != null && psHq !== activeHq) return;
     setCarrito((prev) => ({
       ...prev,
       [id]: {
@@ -442,10 +436,17 @@ export default function NuevaVenta() {
             </div>
           ) : (
             <>
-              <div className="mb-2 flex w-full items-center justify-between">
-                <p className="text-sm font-bold text-ceibo-green">Productos</p>
+              <div className="mb-2 flex w-full items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-ceibo-green">Productos</p>
+                  {effectiveHqId && (
+                    <p className="truncate text-xs text-gray-500">
+                      Inventario de: {sedeActiva ?? `Sede #${effectiveHqId}`}
+                    </p>
+                  )}
+                </div>
                 {cartItems.length > 0 && (
-                  <span className="rounded-lg bg-blue-50 px-2 py-1 text-xs font-bold text-ceibo-sale">
+                  <span className="shrink-0 rounded-lg bg-blue-50 px-2 py-1 text-xs font-bold text-ceibo-sale">
                     {cartItems.length} en carrito
                   </span>
                 )}
@@ -483,7 +484,9 @@ export default function NuevaVenta() {
 
           <div className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white">
             <ul className="max-h-56 overflow-y-auto overflow-x-hidden">
-              {filtered.length === 0 ? (
+              {loading ? (
+                <li className="p-6 text-center text-sm text-gray-400">Cargando productos...</li>
+              ) : filtered.length === 0 ? (
                 <li className="p-6 text-center text-sm text-gray-400">Sin resultados</li>
               ) : (
                 filtered.map((ps) => {
