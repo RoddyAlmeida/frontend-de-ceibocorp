@@ -16,6 +16,27 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> 
   in_stock: { label: 'Ajuste', color: '#00695C', bg: '#E0F2F1' },
 };
 
+function formatInputDate(v: string) {
+  const [y, m, d] = v.split('-');
+  return y && m && d ? `${d}/${m}/${y}` : v;
+}
+
+function DateField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="relative flex flex-1 items-center min-h-12 rounded-xl border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-teal-500/40">
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+      />
+      <span className={`pointer-events-none px-3 text-[11px] ${value ? 'text-gray-900' : 'text-gray-400'}`}>
+        {value ? formatInputDate(value) : 'dd/mm/aaaa'}
+      </span>
+    </div>
+  );
+}
+
 export default function Kardex() {
   const user = useAuthStore((s) => s.user);
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
@@ -139,8 +160,8 @@ export default function Kardex() {
         </div>
         {/* Date range */}
         <div className="flex gap-2">
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="flex-1 min-h-12 rounded-xl border border-gray-200 px-3 py-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-teal-500/40" />
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="flex-1 min-h-12 rounded-xl border border-gray-200 px-3 py-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-teal-500/40" />
+          <DateField value={dateFrom} onChange={setDateFrom} />
+          <DateField value={dateTo} onChange={setDateTo} />
         </div>
         {/* Search */}
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por producto..." className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500/40" />
