@@ -107,9 +107,9 @@ export default function NewPlantModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center">
-      <div className="flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <header className="flex items-center gap-3 rounded-t-2xl bg-gradient-to-br from-ceibo-green to-ceibo-green-light p-4">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-white lg:items-center lg:justify-center lg:bg-black/40 lg:p-4">
+      <div className="flex h-full min-h-0 flex-col bg-white lg:h-auto lg:max-h-[90vh] lg:w-full lg:max-w-md lg:rounded-2xl lg:shadow-xl">
+        <header className="flex items-center gap-3 bg-gradient-to-br from-ceibo-green to-ceibo-green-light p-4 lg:rounded-t-2xl">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">
             <span className="text-lg">🌱</span>
           </div>
@@ -123,126 +123,128 @@ export default function NewPlantModal({
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          {error && (
-            <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600">{error}</div>
-          )}
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            {error && (
+              <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-600">{error}</div>
+            )}
 
-          <label className="mb-3 flex flex-col gap-1">
-            <span className="text-xs font-bold text-green-900">Nombre *</span>
-            <input
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Ej. Guayaba"
-              className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
-            />
-          </label>
-
-          <label className="mb-3 flex flex-col gap-1">
-            <span className="text-xs font-bold text-green-900">Categoría *</span>
-            <select
-              value={categoriaId}
-              onChange={(e) => setCategoriaId(e.target.value)}
-              className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
-            >
-              <option value="">Seleccionar categoría</option>
-              {categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {isSuperAdmin && (
             <label className="mb-3 flex flex-col gap-1">
-              <span className="text-xs font-bold text-green-900">Sede *</span>
+              <span className="text-xs font-bold text-green-900">Nombre *</span>
+              <input
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Ej. Guayaba"
+                className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
+              />
+            </label>
+
+            <label className="mb-3 flex flex-col gap-1">
+              <span className="text-xs font-bold text-green-900">Categoría *</span>
               <select
-                value={sedeId}
-                onChange={(e) => setSedeId(e.target.value)}
+                value={categoriaId}
+                onChange={(e) => setCategoriaId(e.target.value)}
                 className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
               >
-                <option value="">Seleccionar sede</option>
-                {sedes.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
+                <option value="">Seleccionar categoría</option>
+                {categorias.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
             </label>
-          )}
 
-          <label className="mb-3 flex flex-col gap-1">
-            <span className="text-xs font-bold text-green-900">Descripción</span>
-            <textarea
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              rows={2}
-              placeholder="Opcional"
-              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
-            />
-          </label>
+            {isSuperAdmin && (
+              <label className="mb-3 flex flex-col gap-1">
+                <span className="text-xs font-bold text-green-900">Sede *</span>
+                <select
+                  value={sedeId}
+                  onChange={(e) => setSedeId(e.target.value)}
+                  className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
+                >
+                  <option value="">Seleccionar sede</option>
+                  {sedes.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
 
-          <div className="mb-3 rounded-xl bg-green-50 p-3">
-            <p className="mb-2 text-[11px] font-bold text-green-800">
-              Tamaño y precios (opcional)
-            </p>
-            <label className="mb-2 flex flex-col gap-1">
-              <span className="text-xs font-bold text-green-900">Tamaño</span>
-              <input
-                value={tamano}
-                onChange={(e) => setTamano(e.target.value)}
-                placeholder="Ej. Mediano 60cm"
-                className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
+            <label className="mb-3 flex flex-col gap-1">
+              <span className="text-xs font-bold text-green-900">Descripción</span>
+              <textarea
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                rows={2}
+                placeholder="Opcional"
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
               />
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold text-green-900">Precio unitario</span>
+
+            <div className="mb-3 rounded-xl bg-green-50 p-3">
+              <p className="mb-2 text-[11px] font-bold text-green-800">
+                Tamaño y precios (opcional)
+              </p>
+              <label className="mb-2 flex flex-col gap-1">
+                <span className="text-xs font-bold text-green-900">Tamaño</span>
                 <input
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  placeholder="0.00"
+                  value={tamano}
+                  onChange={(e) => setTamano(e.target.value)}
+                  placeholder="Ej. Mediano 60cm"
                   className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
                 />
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold text-green-900">Precio mayorista</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  value={precioMayor}
-                  onChange={(e) => setPrecioMayor(e.target.value)}
-                  placeholder="0.00"
-                  className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
-                />
-              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-bold text-green-900">Precio unitario</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    value={precio}
+                    onChange={(e) => setPrecio(e.target.value)}
+                    placeholder="0.00"
+                    className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-xs font-bold text-green-900">Precio mayorista</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    value={precioMayor}
+                    onChange={(e) => setPrecioMayor(e.target.value)}
+                    placeholder="0.00"
+                    className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
+                  />
+                </label>
+              </div>
             </div>
+
+            <label className="mb-1 flex flex-col gap-1">
+              <span className="text-xs font-bold text-green-900">Stock inicial</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                value={stockInicial}
+                onChange={(e) => setStockInicial(e.target.value)}
+                placeholder="0"
+                className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
+              />
+              <span className="text-[11px] text-gray-500">
+                Requiere tamaño y precio para registrar stock inicial.
+              </span>
+            </label>
           </div>
 
-          <label className="mb-4 flex flex-col gap-1">
-            <span className="text-xs font-bold text-green-900">Stock inicial</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min="0"
-              value={stockInicial}
-              onChange={(e) => setStockInicial(e.target.value)}
-              placeholder="0"
-              className="min-h-11 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-green-400"
-            />
-            <span className="text-[11px] text-gray-500">
-              Requiere tamaño y precio para registrar stock inicial.
-            </span>
-          </label>
-
-          <div className="flex gap-2">
+          <div className="flex gap-2 border-t border-gray-100 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <button
               type="button"
               onClick={onClose}
