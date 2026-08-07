@@ -1,6 +1,6 @@
 import { parseRole, type Role } from './role';
 
-export type EmpleadoTab = 'todos' | 'activos' | 'inactivos' | 'pendientes';
+export type EmpleadoTab = 'todos' | 'activos' | 'inactivos';
 
 export interface Empleado {
   id: number;

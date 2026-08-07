@@ -271,25 +271,6 @@ export async function toggleEmployeeStatus(userId: number, active: boolean) {
   return data;
 }
 
-export async function activateUserWithRole(userId: number, _roleId: number) {
-  // TODO(backend): No existe endpoint para activar + asignar rol en un solo paso.
-  const { data } = await api.put(`/users/${userId}`, { status: 'active' });
-  return data;
-}
-
-/**
- * Asigna un rol a un usuario ya existente.
- * NOTA: Esto requiere un segundo PATCH /users/{id} porque el endpoint
- * toggle-active no acepta role_id. Se llama después de activateUserWithRole
- * solo si el backend lo soporta.
- *
- * TODO(backend): Consolidar activación + asignación de rol en un solo endpoint.
- */
-export async function updateUserRole(userId: number, roleId: number) {
-  const { data } = await api.patch(`/users/${userId}`, { role_id: roleId });
-  return data;
-}
-
 // ─── Stock Alerts / Thresholds / Movements ──────────────────────────────────
 
 export interface StockAlert {

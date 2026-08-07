@@ -5,7 +5,6 @@ import EmpleadoFormModal, { type SedeOption } from '../components/empleados/Empl
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { RolePolicy } from '../lib/rolePolicy';
 import {
-  activateUserWithRole,
   createEmployee,
   getEmployees,
   getHeadquarters,
@@ -44,10 +43,6 @@ export default function Empleados() {
 
   const [confirmToggle, setConfirmToggle] = useState<Empleado | null>(null);
   const [toggling, setToggling] = useState(false);
-
-  const [activating, setActivating] = useState<Empleado | null>(null);
-  const [activateRoleId, setActivateRoleId] = useState<number>(3);
-  const [activatingLoading, setActivatingLoading] = useState(false);
 
   const canChooseHq = RolePolicy.canChooseEmployeeHeadquarter(role);
   const assignableRoles = RolePolicy.assignableRoles(role);
@@ -105,7 +100,6 @@ export default function Empleados() {
 
     if (tab === 'activos') list = list.filter((e) => e.isActive);
     else if (tab === 'inactivos') list = list.filter((e) => !e.isActive);
-    else if (tab === 'pendientes') list = list.filter((e) => !e.isActive);
 
     if (q) {
       list = list.filter(
@@ -122,7 +116,7 @@ export default function Empleados() {
   const counts = useMemo(() => {
     const activos = empleados.filter((e) => e.isActive).length;
     const inactivos = empleados.length - activos;
-    return { todos: empleados.length, activos, inactivos, pendientes: inactivos };
+    return { todos: empleados.length, activos, inactivos };
   }, [empleados]);
 
   const canToggleFor = useCallback(
@@ -236,27 +230,6 @@ export default function Empleados() {
     }
   };
 
-  const requestActivate = (emp: Empleado) => {
-    setActivating(emp);
-    setActivateRoleId(assignableRoles[0]?.id ?? 3);
-  };
-
-  const confirmActivate = async () => {
-    if (!activating) return;
-    setActivatingLoading(true);
-    try {
-      await activateUserWithRole(activating.id, activateRoleId);
-      showToast(`${activating.name} fue activado.`);
-      setActivating(null);
-      await loadEmpleados();
-    } catch (err) {
-      console.error('[empleados] Error al activar usuario:', err);
-      showToast(err instanceof Error ? err.message : 'No se pudo activar el usuario', 'err');
-    } finally {
-      setActivatingLoading(false);
-    }
-  };
-
   if (!role || !RolePolicy.canAccessEmpleados(role)) {
     return null;
   }
@@ -306,14 +279,6 @@ export default function Empleados() {
             onClick={() => setTab('inactivos')}
             danger
           />
-          {RolePolicy.canActivateUsers(role) && (
-            <TabChip
-              label={`Pendientes (${counts.pendientes})`}
-              active={tab === 'pendientes'}
-              onClick={() => setTab('pendientes')}
-              accent
-            />
-          )}
         </div>
       </div>
 
@@ -339,8 +304,6 @@ export default function Empleados() {
                   canEdit={canEditFor(emp)}
                   onEdit={() => openEdit(emp)}
                   onToggle={() => requestToggle(emp)}
-                  showActivate={tab === 'pendientes'}
-                  onActivate={() => requestActivate(emp)}
                 />
               ))}
             </div>
@@ -350,8 +313,6 @@ export default function Empleados() {
               canEditFor={canEditFor}
               onEdit={openEdit}
               onToggle={requestToggle}
-              showActivate={tab === 'pendientes'}
-              onActivate={requestActivate}
             />
           </>
         )}
@@ -396,57 +357,6 @@ export default function Empleados() {
         onConfirm={confirmToggleStatus}
         onCancel={() => setConfirmToggle(null)}
       />
-
-      {activating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-extrabold text-ceibo-green">Activar usuario</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Se activará a <span className="font-semibold">{activating.name} {activating.last_name}</span> con su rol por defecto.
-            </p>
-
-            <label className="mt-4 flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-ceibo-green">Rol</span>
-                <span className="text-[10px] font-bold text-amber-600">Próximamente</span>
-              </div>
-              <select
-                value={activateRoleId}
-                disabled
-                className="min-h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-400 outline-none"
-              >
-                {assignableRoles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-              <span className="text-[10px] text-gray-400">
-                La asignación de rol en la activación requiere un cambio en el backend.
-              </span>
-            </label>
-
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setActivating(null)}
-                disabled={activatingLoading}
-                className="flex-1 rounded-xl border-2 border-gray-200 py-3 text-sm font-semibold text-gray-600 disabled:opacity-60"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmActivate}
-                disabled={activatingLoading}
-                className="flex-1 rounded-xl bg-ceibo-green-light py-3 text-sm font-bold text-white disabled:opacity-60"
-              >
-                {activatingLoading ? 'Activando...' : 'Activar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -456,13 +366,11 @@ function TabChip({
   active,
   onClick,
   danger,
-  accent,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
   danger?: boolean;
-  accent?: boolean;
 }) {
   return (
     <button
@@ -473,9 +381,7 @@ function TabChip({
         active
           ? danger
             ? 'bg-red-600 text-white'
-            : accent
-              ? 'bg-amber-500 text-white'
-              : 'bg-ceibo-green-light text-white'
+            : 'bg-ceibo-green-light text-white'
           : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
       ].join(' ')}
     >

@@ -41,10 +41,6 @@ export const RolePolicy = {
     return role === 'admin' || role === 'super_admin';
   },
 
-  canActivateUsers(role: Role | null): boolean {
-    return role === 'super_admin';
-  },
-
   canAccessHistorialVentas(role: Role | null): boolean {
     return role === 'admin' || role === 'super_admin' || role === 'bodeguero';
   },
