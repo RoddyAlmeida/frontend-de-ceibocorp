@@ -8,6 +8,7 @@ import ItemEditDrawer from '../components/inventario/ItemEditDrawer';
 import ItemKardexPanel from '../components/inventario/ItemKardexPanel';
 import MovimientoModal from '../components/inventario/MovimientoModal';
 import RecuperacionModal from '../components/inventario/RecuperacionModal';
+import NewPlantModal from '../components/inventario/NewPlantModal';
 import type { InventarioItem } from '../types/inventario';
 import { getEstadoMeta } from '../types/inventario';
 
@@ -58,6 +59,7 @@ export default function Inventario() {
 
   const [searchInput, setSearchInput] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showNewPlant, setShowNewPlant] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
   const debouncedSearch = useDebouncedValue(searchInput, 350);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -136,14 +138,25 @@ export default function Inventario() {
               <p className="text-xs text-white/80">{filters.sede}</p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => refresh().catch(console.error)}
-            className="flex min-h-12 min-w-12 items-center justify-center rounded-xl bg-white/15 p-3 text-sm font-semibold transition-transform active:scale-95"
-            aria-label="Recargar"
-          >
-            ↻
-          </button>
+          <div className="flex items-center gap-2">
+            {canManageRecovery && (
+              <button
+                type="button"
+                onClick={() => setShowNewPlant(true)}
+                className="flex min-h-12 items-center justify-center gap-1 rounded-xl bg-white/15 p-3 text-sm font-semibold text-white transition-transform active:scale-95"
+              >
+                + Agregar
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => refresh().catch(console.error)}
+              className="flex min-h-12 min-w-12 items-center justify-center rounded-xl bg-white/15 p-3 text-sm font-semibold transition-transform active:scale-95"
+              aria-label="Recargar"
+            >
+              ↻
+            </button>
+          </div>
         </div>
 
         <div className="mt-3 flex gap-2">
@@ -409,6 +422,21 @@ export default function Inventario() {
 
       {modal?.type === 'kardex' && (
         <ItemKardexPanel item={modal.item} onClose={() => setModal(null)} />
+      )}
+
+      {showNewPlant && (
+        <NewPlantModal
+          isSuperAdmin={isSuperAdmin}
+          defaultHeadquarterId={user?.headquarter_id}
+          sedes={sedes}
+          categorias={categorias}
+          onClose={() => setShowNewPlant(false)}
+          onCreated={() => {
+            refresh().catch((err) => {
+              console.error('[inventario] Error al refrescar tras crear producto:', err);
+            });
+          }}
+        />
       )}
     </div>
   );

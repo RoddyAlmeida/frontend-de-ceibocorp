@@ -182,6 +182,8 @@ export const getStocksPaged = (params: {
   });
 export const updateStock = (id: number, body: Record<string, unknown>) =>
   api.put(`/stocks/${id}`, body);
+export const createStock = (body: Record<string, unknown>) =>
+  api.post('/stocks', body);
 export const getStockMovementsByStock = (stockId: number) =>
   api.get(`/stocks/${stockId}/movements`);
 
@@ -402,6 +404,25 @@ export const getEmployees = () => api.get('/users');
 export const createSale = (body: CreateSalePayload) => api.post('/sales', body);
 export const deleteSale = (id: number, reason: string) =>
   api.delete(`/sales/${id}`, { data: { deleted_reason: reason } });
+
+/**
+ * Descarga el PDF del recibo de una venta (mismo template que el del correo).
+ * Se hace con fetch directo para obtener un Blob (necesita header Authorization).
+ */
+export async function getSaleReceiptPdf(
+  saleId: number,
+): Promise<Blob> {
+  const token = getToken();
+  const resp = await fetch(`${baseURL}/sales/${saleId}/receipt-pdf`, {
+    method: 'GET',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => ({}));
+    throw new Error(body?.message ?? `Error ${resp.status}`);
+  }
+  return resp.blob();
+}
 
 // ─── Categories ─────────────────────────────────────────────────────────────
 
