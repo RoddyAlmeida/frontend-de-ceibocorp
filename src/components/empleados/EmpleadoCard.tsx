@@ -83,7 +83,7 @@ export default function EmpleadoCard({
               onClick={onToggle}
               className={[
                 'relative h-6 w-11 rounded-full transition-colors',
-                empleado.isActive ? 'bg-ceibo-green-light/30' : 'bg-gray-200',
+                empleado.isActive ? 'bg-ceibo-green-light' : 'bg-gray-200',
               ].join(' ')}
             >
               <span
@@ -203,7 +203,11 @@ export function EmpleadoTable({
                     <button
                       type="button"
                       onClick={() => onToggle(emp)}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+                      className={
+                        emp.isActive
+                          ? 'rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50'
+                          : 'rounded-lg bg-ceibo-green-light px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90'
+                      }
                     >
                       {emp.isActive ? 'Desactivar' : 'Activar'}
                     </button>

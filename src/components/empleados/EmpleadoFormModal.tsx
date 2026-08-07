@@ -266,7 +266,7 @@ export default function EmpleadoFormModal({
                   onClick={() => set({ isActive: !form.isActive })}
                   className={[
                     'relative h-6 w-11 rounded-full transition-colors',
-                    form.isActive ? 'bg-ceibo-green-light/40' : 'bg-gray-200',
+                    form.isActive ? 'bg-ceibo-green-light' : 'bg-gray-200',
                   ].join(' ')}
                 >
                   <span
