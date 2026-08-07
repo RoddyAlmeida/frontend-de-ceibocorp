@@ -265,13 +265,13 @@ export default function EmpleadoFormModal({
                   aria-checked={form.isActive}
                   onClick={() => set({ isActive: !form.isActive })}
                   className={[
-                    'relative h-6 w-11 rounded-full transition-colors',
+                    'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors',
                     form.isActive ? 'bg-ceibo-green-light' : 'bg-gray-200',
                   ].join(' ')}
                 >
                   <span
                     className={[
-                      'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
+                      'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-transform',
                       form.isActive ? 'translate-x-5' : 'translate-x-0.5',
                     ].join(' ')}
                   />
