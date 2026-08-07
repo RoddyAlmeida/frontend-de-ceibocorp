@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CreateTransferPayload } from '../../services/api';
-import { getHeadquarters, getPlantSizes } from '../../services/api';
+import { getHeadquarters, getPlantSizes, getStocksByHeadquarter } from '../../services/api';
 
 interface Sede { id: number; name: string }
 interface PlantSize { id: number; name: string; size_name?: string; plant?: { name?: string } }
@@ -17,6 +17,30 @@ function sizeDisplayName(ps: PlantSize): string {
   return plantName ? `${plantName} (${sizeName})` : sizeName || 'Sin nombre';
 }
 
+async function fetchAllStocksByHeadquarter(
+  hqId: number,
+): Promise<Record<number, number>> {
+  const map: Record<number, number> = {};
+  let page = 1;
+  let lastPage = 1;
+  do {
+    const res = await getStocksByHeadquarter(hqId, {
+      page: String(page),
+      per_page: '100',
+    });
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+    const meta = (res.data as { meta?: { last_page?: number } })?.meta;
+    for (const s of list as Array<Record<string, unknown>>) {
+      const psId = Number(s.plant_size_id ?? 0);
+      const qty = Number(s.quantity ?? 0);
+      if (psId) map[psId] = qty;
+    }
+    lastPage = meta?.last_page ?? 1;
+    page += 1;
+  } while (page <= lastPage);
+  return map;
+}
+
 export default function NewTransferDialog({
   currentHqId,
   onCrear,
@@ -26,9 +50,15 @@ export default function NewTransferDialog({
   const [toHqId, setToHqId] = useState<number | null>(null);
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [allSizes, setAllSizes] = useState<PlantSize[]>([]);
   const [search, setSearch] = useState('');
+  const [stockBySize, setStockBySize] = useState<Record<number, number>>({});
+  const [stocksLoading, setStocksLoading] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<
+    { id: number; qty: number; name: string }[]
+  >([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,9 +81,27 @@ export default function NewTransferDialog({
     return () => { cancelled = true; };
   }, []);
 
-  const [selectedProducts, setSelectedProducts] = useState<
-    { id: number; qty: number; name: string }[]
-  >([]);
+  useEffect(() => {
+    let cancelled = false;
+    if (fromHqId == null) {
+      setStockBySize({});
+      setStocksLoading(false);
+      return;
+    }
+    setStocksLoading(true);
+    setSelectedProducts([]);
+    fetchAllStocksByHeadquarter(fromHqId)
+      .then((map) => {
+        if (!cancelled) setStockBySize(map);
+      })
+      .catch(() => {
+        if (!cancelled) setStockBySize({});
+      })
+      .finally(() => {
+        if (!cancelled) setStocksLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [fromHqId]);
 
   const filteredSizes = useMemo(() => {
     const q = search.toLowerCase();
@@ -64,7 +112,11 @@ export default function NewTransferDialog({
     return sorted.filter((s) => sizeDisplayName(s).toLowerCase().includes(q));
   }, [allSizes, search]);
 
+  const availableStock = (psId: number): number => stockBySize[psId] ?? 0;
+  const stockReady = fromHqId != null && !stocksLoading;
+
   const toggleProduct = (ps: PlantSize) => {
+    if (!stockReady || availableStock(ps.id) <= 0) return;
     const id = ps.id;
     setSelectedProducts((prev) => {
       const exists = prev.find((p) => p.id === id);
@@ -74,8 +126,10 @@ export default function NewTransferDialog({
   };
 
   const updateQty = (psId: number, qty: number) => {
+    const max = availableStock(psId);
+    const clamped = Math.max(1, Math.min(qty, max));
     setSelectedProducts((prev) =>
-      prev.map((p) => (p.id === psId ? { ...p, qty } : p)),
+      prev.map((p) => (p.id === psId ? { ...p, qty: clamped } : p)),
     );
   };
 
@@ -83,15 +137,28 @@ export default function NewTransferDialog({
     setSelectedProducts((prev) => prev.filter((p) => p.id !== psId));
   };
 
+  const allQuantitiesValid =
+    stockReady &&
+    selectedProducts.every(
+      (p) => p.qty >= 1 && p.qty <= (stockBySize[p.id] ?? 0),
+    );
+
   const canSubmit =
     fromHqId != null &&
     toHqId != null &&
     fromHqId !== toHqId &&
     selectedProducts.length > 0 &&
+    stockReady &&
+    allQuantitiesValid &&
     !saving;
 
   const handleSubmit = async () => {
     if (!canSubmit || fromHqId == null || toHqId == null) return;
+    setError(null);
+    if (!allQuantitiesValid) {
+      setError('Revisa las cantidades: no pueden superar el stock disponible');
+      return;
+    }
     setSaving(true);
     try {
       await onCrear({
@@ -106,6 +173,9 @@ export default function NewTransferDialog({
         })),
       });
       onClose();
+    } catch (err) {
+      console.error('[traslados] Error al crear traslado:', err);
+      setError(err instanceof Error ? err.message : 'No se pudo crear el traslado');
     } finally {
       setSaving(false);
     }
@@ -135,6 +205,12 @@ export default function NewTransferDialog({
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto p-4">
+          {error && (
+            <div className="mb-3 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-600">
+              {error}
+            </div>
+          )}
+
           {/* Sede Origen */}
           <FieldLabel text="Sede Origen *" />
           <select
@@ -207,18 +283,22 @@ export default function NewTransferDialog({
             ) : (
               filteredSizes.map((ps) => {
                 const selected = selectedProducts.find((p) => p.id === ps.id);
+                const stock = availableStock(ps.id);
+                const hasStock = stockReady && stock > 0;
+                const disabled = !stockReady || stock <= 0;
                 return (
                   <label
                     key={ps.id}
-                    className={`flex cursor-pointer items-center gap-2 border-b border-gray-100 px-3 py-2 last:border-0 ${
+                    className={`flex items-center gap-2 border-b border-gray-100 px-3 py-2 last:border-0 ${
                       selected ? 'bg-green-50' : ''
-                    }`}
+                    } ${disabled ? 'opacity-60' : 'cursor-pointer'}`}
                   >
                     <input
                       type="checkbox"
                       checked={!!selected}
+                      disabled={disabled}
                       onChange={() => toggleProduct(ps)}
-                      className="h-4 w-4 rounded accent-green-600"
+                      className="h-4 w-4 rounded accent-green-600 disabled:cursor-not-allowed"
                     />
                     <span
                       className={`flex-1 text-xs ${
@@ -229,6 +309,21 @@ export default function NewTransferDialog({
                     >
                       {sizeDisplayName(ps)}
                     </span>
+                    {!stockReady && (
+                      <span className="text-[10px] text-gray-400">
+                        {fromHqId != null ? 'Cargando stock…' : 'Elige sede origen'}
+                      </span>
+                    )}
+                    {stockReady && hasStock && (
+                      <span className="rounded-md bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700">
+                        Stock: {stock}
+                      </span>
+                    )}
+                    {stockReady && !hasStock && (
+                      <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500">
+                        Sin stock
+                      </span>
+                    )}
                     {selected && (
                       <div className="flex items-center gap-1">
                         <button
@@ -246,6 +341,7 @@ export default function NewTransferDialog({
                           type="number"
                           value={selected.qty}
                           min={1}
+                          max={stock}
                           onChange={(e) => {
                             const n = Number(e.target.value);
                             if (n > 0) updateQty(ps.id, n);
@@ -256,7 +352,7 @@ export default function NewTransferDialog({
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();
-                            updateQty(ps.id, selected.qty + 1);
+                            if (selected.qty < stock) updateQty(ps.id, selected.qty + 1);
                           }}
                           className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-xs text-green-700"
                         >
@@ -281,6 +377,9 @@ export default function NewTransferDialog({
                   <span className="text-[11px] text-green-600">🌿</span>
                   <span className="flex-1 text-[11px] text-gray-700">
                     {p.name}
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    disp. {availableStock(p.id)}
                   </span>
                   <span className="text-[11px] font-bold text-green-700">
                     {p.qty} un.
