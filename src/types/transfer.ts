@@ -45,7 +45,7 @@ export function getTransferDisplayGroup(status: string): TransferDisplayGroup {
   return 'red';
 }
 
-// ─── State machine (mirrors _TC.nextStates in Flutter) ───────────────────────
+// ─── Estado libre: cualquier estado a cualquier estado ───────────────────────
 
 export function transferNextStates(
   currentStatus: string,
@@ -54,16 +54,7 @@ export function transferNextStates(
 ): TransferStatus[] {
   if (!isSuperAdmin && !isAdmin) return [];
   const s = currentStatus.toLowerCase().trim();
-  switch (s) {
-    case 'pending':
-      return ['approved', 'rejected', 'canceled'];
-    case 'approved':
-      return ['in_transport', 'canceled'];
-    case 'in_transport':
-      return ['completed', 'canceled', 'damaged', 'partial'];
-    default:
-      return [];
-  }
+  return TRANSFER_STATUSES.filter((m) => m.value !== s).map((m) => m.value);
 }
 
 // ─── Tabs (mirrors Flutter _tabs) ────────────────────────────────────────────
