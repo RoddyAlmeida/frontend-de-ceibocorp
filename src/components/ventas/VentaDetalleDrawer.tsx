@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
 import { RolePolicy } from '../../lib/rolePolicy';
-import { deleteSale } from '../../services/api';
+import { deleteSale, getSaleReceiptPdf } from '../../services/api';
 import { downloadReceiptAsImage } from '../../lib/receiptImage';
 import type { Role } from '../../types/role';
 import type { Venta } from '../../types/venta';
 import { formatFechaVenta, nombreProductoVenta, ventaIsAnulada, ventaTotal } from '../../types/venta';
-import { buildReceiptHtmlString, Recibo } from '../Recibo';
+import { Recibo } from '../Recibo';
 
 interface VentaDetalleDrawerProps {
   venta: Venta | null;
@@ -25,6 +25,7 @@ export default function VentaDetalleDrawer({
   const [voidOpen, setVoidOpen] = useState(false);
   const [voidReason, setVoidReason] = useState('');
   const [voiding, setVoiding] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
 
   if (!venta) return null;
@@ -34,25 +35,28 @@ export default function VentaDetalleDrawer({
   const canVoid = RolePolicy.canVoidSale(role) && !anulada;
   const sellerName = venta.user ? `${venta.user.name ?? ''} ${venta.user.last_name ?? ''}`.trim() : '';
 
-  const handlePrint = () => {
-    const html = buildReceiptHtmlString(venta, sellerName, venta.headquarter?.name, role === 'super_admin');
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.left = '-9999px';
-    document.body.appendChild(iframe);
-    const doc = iframe.contentWindow?.document;
-    if (!doc) {
-      console.error('[ventas] No se pudo crear iframe para imprimir');
-      onToast('No se pudo abrir la impresión', 'err');
-      return;
+  const handlePrint = async () => {
+    setPrinting(true);
+    try {
+      const blob = await getSaleReceiptPdf(venta.id);
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, '_blank');
+      if (!win) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `recibo-ceibocorp-${venta.id}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        onToast('Recibo PDF descargado');
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      console.error('[ventas] Error al obtener el PDF del recibo:', err);
+      onToast(err instanceof Error ? err.message : 'No se pudo abrir el recibo', 'err');
+    } finally {
+      setPrinting(false);
     }
-    doc.open();
-    doc.write(html);
-    doc.close();
-    window.setTimeout(() => {
-      iframe.contentWindow?.print();
-      iframe.remove();
-    }, 300);
   };
 
   const handleDownloadImage = async () => {
@@ -163,9 +167,10 @@ export default function VentaDetalleDrawer({
             <button
               type="button"
               onClick={handlePrint}
-              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700"
+              disabled={printing}
+              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"
             >
-              Imprimir recibo
+              {printing ? 'Generando PDF…' : 'Imprimir recibo'}
             </button>
             <button
               type="button"
